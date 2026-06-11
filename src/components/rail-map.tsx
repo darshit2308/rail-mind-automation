@@ -85,8 +85,8 @@ export default function RailMap({ trains, segments, incidents, networkView }: Ra
       center={[20.1, 73.15]}
       zoom={8}
       className="h-full w-full"
-      zoomControl={false}
-      scrollWheelZoom={false}
+      zoomControl={true}
+      scrollWheelZoom={true}
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

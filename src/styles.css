@@ -238,6 +238,7 @@
 .leaflet-container {
   background: oklch(0.15 0.03 262);
   font-family: var(--font-display);
+  touch-action: none;
 }
 
 .leaflet-popup-content-wrapper,
