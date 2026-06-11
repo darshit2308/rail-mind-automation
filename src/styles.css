@@ -5,17 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * RailMind — control room dark theme.
+ * Deep navy surfaces, blue/green/amber/red operational accents,
+ * purple reserved for AI agent activity.
  */
 
 @theme inline {
@@ -42,6 +34,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-agent: var(--agent);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -59,77 +54,47 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
-}
-
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --radius: 0.5rem;
+  --background: oklch(0.17 0.032 262);
+  --foreground: oklch(0.96 0.008 248);
+  --card: oklch(0.225 0.038 262);
+  --card-foreground: oklch(0.96 0.008 248);
+  --popover: oklch(0.21 0.036 262);
+  --popover-foreground: oklch(0.96 0.008 248);
+  --primary: oklch(0.62 0.19 256);
+  --primary-foreground: oklch(0.98 0.005 248);
+  --secondary: oklch(0.27 0.04 262);
+  --secondary-foreground: oklch(0.96 0.008 248);
+  --muted: oklch(0.26 0.038 262);
+  --muted-foreground: oklch(0.71 0.035 257);
+  --accent: oklch(0.27 0.04 262);
+  --accent-foreground: oklch(0.96 0.008 248);
+  --destructive: oklch(0.64 0.21 25);
+  --destructive-foreground: oklch(0.98 0.005 248);
+  --success: oklch(0.7 0.15 163);
+  --warning: oklch(0.77 0.16 70);
+  --agent: oklch(0.61 0.22 293);
+  --border: oklch(0.31 0.042 262);
+  --input: oklch(0.31 0.042 262);
+  --ring: oklch(0.62 0.19 256);
+  --chart-1: oklch(0.62 0.19 256);
+  --chart-2: oklch(0.7 0.15 163);
+  --chart-3: oklch(0.77 0.16 70);
+  --chart-4: oklch(0.61 0.22 293);
+  --chart-5: oklch(0.64 0.21 25);
+  --sidebar: oklch(0.21 0.036 262);
+  --sidebar-foreground: oklch(0.96 0.008 248);
+  --sidebar-primary: oklch(0.62 0.19 256);
+  --sidebar-primary-foreground: oklch(0.98 0.005 248);
+  --sidebar-accent: oklch(0.27 0.04 262);
+  --sidebar-accent-foreground: oklch(0.96 0.008 248);
+  --sidebar-border: oklch(0.31 0.042 262);
+  --sidebar-ring: oklch(0.62 0.19 256);
 }
 
 @layer base {
@@ -137,8 +102,141 @@
     border-color: var(--color-border);
   }
 
+  html,
+  body {
+    height: 100%;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-display);
   }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+  }
+}
+
+/* ---------- Map marker styling (leaflet divIcons) ---------- */
+
+.rm-icon {
+  background: transparent;
+  border: none;
+}
+
+.rm-train {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.rm-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+
+.rm-tid {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #cbd5e1;
+  background: rgba(10, 15, 30, 0.78);
+  padding: 0 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.rm-inc {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+
+.rm-inc-core {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--ic);
+  box-shadow: 0 0 10px var(--ic);
+}
+
+.rm-inc-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--ic);
+  animation: rm-pulse 1.4s ease-out infinite;
+}
+
+@keyframes rm-pulse {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes rm-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.rm-blink {
+  animation: rm-blink 1.2s ease-in-out infinite;
+}
+
+/* ---------- Leaflet chrome overrides ---------- */
+
+.leaflet-container {
+  background: oklch(0.15 0.03 262);
+  font-family: var(--font-display);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: oklch(0.225 0.038 262);
+  color: oklch(0.96 0.008 248);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-popup-content {
+  margin: 10px 14px;
+  font-size: 12px;
+}
+
+.rm-station-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #8fa3c0 !important;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0;
+}
+
+.rm-station-label::before {
+  display: none;
 }
