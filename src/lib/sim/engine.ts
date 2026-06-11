@@ -7,6 +7,7 @@ import type {
   HistoryPoint,
   Incident,
   IncidentType,
+  ResolvedInfo,
   Segment,
   Severity,
   Train,
@@ -142,6 +143,8 @@ export class SimEngine {
   resolvedCount = 0;
   resolutionTimes: number[] = [];
   demoRunning = false;
+  /** Set by the UI layer to fire a toast when an incident resolves. */
+  onResolved: ((info: ResolvedInfo) => void) | null = null;
 
   private scheduled: { due: number; fn: () => void }[] = [];
   private feedSeq = 0;
@@ -281,10 +284,188 @@ export class SimEngine {
 
   // ---------- incidents ----------
 
+  /**
+   * Scripted showcase incident: Signal Box S-17 power failure at Kalyan Junction.
+   * Exact agent choreography over ~17 simulated seconds.
+   */
   triggerDemo() {
     if (this.demoRunning) return;
     this.demoRunning = true;
-    this.spawnIncident("signal_failure", "KALYAN", true);
+
+    const st = this.stationMap.get("KALYAN")!;
+    const id = `INC-${String(++this.incSeq).padStart(3, "0")}`;
+    const affectedIds = ["TR-2041", "TR-6612", "TR-7789"];
+    const affected = this.trains.filter((t) => affectedIds.includes(t.id));
+    const pax = affected.reduce((sum, t) => sum + t.passengers, 0);
+    const seg = this.segments.find((sg) => sg.id === "SEG-03");
+
+    const inc: Incident = {
+      id,
+      type: "signal_failure",
+      label: "Signal Box S-17 Power Failure",
+      severity: "critical",
+      locationName: "Kalyan Junction",
+      lat: st.lat,
+      lng: st.lng,
+      affectedTrains: affectedIds,
+      raisedAt: this.timeNow(),
+      raisedAtSim: this.wallSim,
+      status: "detected",
+    };
+    this.incidents.unshift(inc);
+    if (this.incidents.length > 14) this.incidents.pop();
+
+    const tr = (tid: string) => this.trains.find((t) => t.id === tid)!;
+    const s = (off: number, fn: () => void) =>
+      this.scheduled.push({ due: this.wallSim + off, fn });
+
+    tr("TR-2041").status = "halted";
+    tr("TR-6612").status = "halted";
+    if (seg) seg.status = "closed";
+    this.pushFeed(
+      "detected",
+      "monitor",
+      `🔴 CRITICAL ${id}: Signal failure detected at Kalyan Junction. 3 trains affected.`,
+    );
+
+    s(1.5, () =>
+      this.think(
+        "monitor",
+        "Anomaly confirmed — Signal S-17 offline. Power loss detected at signal box. Severity: CRITICAL. Escalating to Orchestrator.",
+      ),
+    );
+    s(3, () => {
+      inc.status = "in_resolution";
+      this.think(
+        "orchestrator",
+        "CRITICAL severity incident. Dispatching Incident Response + Route Optimizer simultaneously.",
+        "dispatch",
+      );
+    });
+    s(4.5, () =>
+      this.think(
+        "incident_response",
+        "Root cause analysis — S-17 power failure, estimated recovery 45–90 minutes. 3 trains in holding pattern. Requesting immediate rerouting.",
+      ),
+    );
+    s(6, () =>
+      this.think(
+        "route_optimizer",
+        "Evaluating alternatives for TR-2041, TR-6612, TR-7789. Option A: Dombivali bypass (+8 min). Option B: Ulhasnagar bypass (+14 min). Option C: Hold and wait (45+ min).",
+      ),
+    );
+    s(8, () => {
+      const t = tr("TR-2041");
+      t.status = "rerouted";
+      t.reroutedUntil = this.wallSim + 60;
+      this.act(
+        "route_optimizer",
+        "assign_new_route",
+        "Selected Dombivali bypass for TR-2041. Assigning new route…",
+      );
+    });
+    s(9.5, () => {
+      const t6 = tr("TR-6612");
+      t6.status = "on_time";
+      t6.delayMinutes = 0;
+      this.act(
+        "route_optimizer",
+        "adjust_platform",
+        "Adjusted TR-6612 platform to Platform 3A. Released from hold.",
+      );
+      const t7 = tr("TR-7789");
+      t7.delayMinutes += 3;
+      this.pushFeed(
+        "step",
+        "route_optimizer",
+        "TR-7789 authorized via Panvel Loop. +3 min delay accepted.",
+      );
+    });
+    s(11, () =>
+      this.think(
+        "passenger_comms",
+        `Composing updates for ${pax.toLocaleString()} affected passengers across 3 trains.`,
+      ),
+    );
+    s(12.5, () => {
+      this.act(
+        "passenger_comms",
+        "send_push_notification",
+        "Station boards updated at Kalyan, Dadar, Thane. Push notifications sent.",
+      );
+      this.pushFeed(
+        "step",
+        "passenger_comms",
+        "Connecting service alerts issued for 14 passengers at Pune Junction.",
+      );
+    });
+    s(14, () =>
+      this.think(
+        "maintenance",
+        "Signal S-17 repair window analysis. Next available: tonight 01:30–04:00. No trains scheduled.",
+      ),
+    );
+    s(15.5, () =>
+      this.act(
+        "maintenance",
+        "create_maintenance_job",
+        "Booked maintenance crew CR-7 for 01:30 tonight. Speed restriction S-17 zone: 30 km/h until repair complete.",
+      ),
+    );
+    s(17, () => {
+      inc.status = "resolved";
+      inc.resolvedAtSim = this.wallSim;
+      this.resolvedCount += 1;
+      const secs = Math.round(this.wallSim - inc.raisedAtSim);
+      this.resolutionTimes.push(secs);
+      const t = tr("TR-2041");
+      t.status = "delayed";
+      t.delayMinutes = 8;
+      t.reroutedUntil = 0;
+      this.pushFeed(
+        "resolved",
+        "orchestrator",
+        `✅ Incident resolved in ${secs}s. All 3 trains rerouted. ${pax.toLocaleString()} passengers notified. Maintenance scheduled.`,
+      );
+      this.onResolved?.({
+        title: "Signal Box S-17 Power Failure",
+        seconds: secs,
+        passengers: pax,
+      });
+      const order: AgentId[] = [
+        "monitor",
+        "orchestrator",
+        "incident_response",
+        "route_optimizer",
+        "passenger_comms",
+        "maintenance",
+      ];
+      order.forEach((aid, i) =>
+        s(0.5 * (i + 1), () => {
+          this.agents[aid].status = "complete";
+        }),
+      );
+      this.demoRunning = false;
+    });
+    s(20, () => {
+      if (seg) seg.status = "clear";
+    });
+    s(24, () => {
+      if (this.activeIncidents.length > 0) return;
+      const ids: AgentId[] = [
+        "orchestrator",
+        "incident_response",
+        "route_optimizer",
+        "passenger_comms",
+        "maintenance",
+      ];
+      for (const aid of ids) {
+        this.agents[aid].status = "idle";
+        this.agents[aid].activity = "Standing by";
+      }
+      this.agents.monitor.status = "analyzing";
+      this.agents.monitor.activity = MONITOR_IDLE;
+    });
   }
 
   private spawnRandomIncident() {
@@ -413,6 +594,11 @@ export class SimEngine {
         "orchestrator",
         `RESOLVED ${id}: ${def.label} at ${st.name} cleared in ${secs}s — all services recovering.`,
       );
+      this.onResolved?.({
+        title: `${def.label} at ${st.name}`,
+        seconds: secs,
+        passengers: pax,
+      });
       if (isDemo) this.demoRunning = false;
     });
     s(28, () => {
@@ -448,7 +634,7 @@ export class SimEngine {
     if (this.feed.length > 80) this.feed.pop();
   }
 
-  private think(id: AgentId, text: string, kind: FeedKind = "step") {
+  private think(id: AgentId, text: string, kind: FeedKind = "thinking") {
     const ag = this.agents[id];
     ag.status = "analyzing";
     ag.activity = text;
