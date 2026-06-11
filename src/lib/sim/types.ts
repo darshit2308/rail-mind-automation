@@ -78,7 +78,13 @@ export interface Incident {
   resolvedAtSim?: number;
 }
 
-export type FeedKind = "detected" | "dispatch" | "step" | "resolved";
+export type FeedKind = "detected" | "dispatch" | "thinking" | "step" | "resolved";
+
+export interface ResolvedInfo {
+  title: string;
+  seconds: number;
+  passengers: number;
+}
 
 export interface FeedEntry {
   id: number;
