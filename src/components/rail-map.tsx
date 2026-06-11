@@ -13,7 +13,13 @@ import { STATIONS } from "@/data/network";
 import type { Incident, Segment, Severity, Train } from "@/lib/sim/types";
 
 const SEG_COLOR: Record<Segment["status"], string> = {
-  clear: "#33415f",
+  clear: "#1E40AF",
+  restricted: "#F59E0B",
+  closed: "#EF4444",
+};
+
+const SEG_COLOR_NETWORK: Record<Segment["status"], string> = {
+  clear: "#10B981",
   restricted: "#F59E0B",
   closed: "#EF4444",
 };
@@ -31,13 +37,16 @@ const SEV_COLOR: Record<Severity, string> = {
   critical: "#EF4444",
 };
 
+const MAJOR_STATIONS = ["CSMT", "DADAR", "THANE", "KALYAN", "PUNE", "SURAT"];
+
 const stationMap = new Map(STATIONS.map((s) => [s.id, s] as const));
 
 function trainIcon(t: Train) {
   const c = TRAIN_COLOR[t.status];
+  const pulse = t.status === "halted" ? "rm-blink" : "";
   return L.divIcon({
     className: "rm-icon",
-    html: `<div class="rm-train"><span class="rm-dot" style="background:${c};box-shadow:0 0 10px ${c}"></span><span class="rm-tid">${t.id}</span></div>`,
+    html: `<div class="rm-train"><span class="rm-dot ${pulse}" style="background:${c};box-shadow:0 0 10px ${c}"></span><span class="rm-tid">${t.id}</span></div>`,
     iconSize: [48, 28],
     iconAnchor: [24, 7],
   });
@@ -53,19 +62,31 @@ function incidentIcon(i: Incident) {
   });
 }
 
+function occupancyFor(stId: string, trains: Train[]) {
+  const st = stationMap.get(stId)!;
+  const pax = trains
+    .filter((t) => Math.abs(t.lat - st.lat) + Math.abs(t.lng - st.lng) < 0.4)
+    .reduce((s, t) => s + t.passengers, 0);
+  return Math.min(0.97, 0.3 + pax / 2800);
+}
+
 interface RailMapProps {
   trains: Train[];
   segments: Segment[];
   incidents: Incident[];
+  networkView?: boolean;
 }
 
-export default function RailMap({ trains, segments, incidents }: RailMapProps) {
+export default function RailMap({ trains, segments, incidents, networkView }: RailMapProps) {
+  const segColors = networkView ? SEG_COLOR_NETWORK : SEG_COLOR;
+
   return (
     <MapContainer
       center={[20.1, 73.15]}
       zoom={8}
       className="h-full w-full"
       zoomControl={false}
+      scrollWheelZoom={false}
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -83,47 +104,74 @@ export default function RailMap({ trains, segments, incidents }: RailMapProps) {
               [b.lat, b.lng],
             ]}
             pathOptions={{
-              color: SEG_COLOR[s.status],
+              color: segColors[s.status],
               weight: s.status === "clear" ? 3 : 5,
-              opacity: 0.9,
+              opacity: networkView ? 0.95 : 0.8,
               dashArray: s.status === "restricted" ? "6 6" : undefined,
             }}
           />
         );
       })}
 
+      {networkView &&
+        MAJOR_STATIONS.map((id) => {
+          const st = stationMap.get(id)!;
+          const occ = occupancyFor(id, trains);
+          const color = occ > 0.85 ? "#EF4444" : occ > 0.65 ? "#F59E0B" : "#10B981";
+          return (
+            <CircleMarker
+              key={`occ-${id}`}
+              center={[st.lat, st.lng]}
+              radius={10 + occ * 16}
+              pathOptions={{ color, weight: 1, fillColor: color, fillOpacity: 0.18 }}
+            >
+              <Tooltip direction="top" offset={[0, -10]} className="rm-station-label">
+                {st.name} — platform occupancy {Math.round(occ * 100)}%
+              </Tooltip>
+            </CircleMarker>
+          );
+        })}
+
       {STATIONS.map((st) => (
         <CircleMarker
           key={st.id}
           center={[st.lat, st.lng]}
-          radius={5}
-          pathOptions={{ color: "#3B82F6", weight: 2, fillColor: "#0A0F1E", fillOpacity: 1 }}
+          radius={6}
+          pathOptions={{ color: "#1E3A8A", weight: 2, fillColor: "#3B82F6", fillOpacity: 1 }}
         >
-          <Tooltip permanent direction="top" offset={[0, -7]} className="rm-station-label">
+          <Tooltip direction="top" offset={[0, -7]} className="rm-station-label">
             {st.name}
           </Tooltip>
         </CircleMarker>
       ))}
 
-      {trains.map((t) => (
-        <Marker key={t.id} position={[t.lat, t.lng]} icon={trainIcon(t)}>
-          <Popup>
-            <div className="space-y-1 font-mono">
-              <p className="text-sm font-semibold">
-                {t.id} · {t.name}
-              </p>
-              <p>Status: {t.status.replace("_", " ")}</p>
-              <p>Speed: {t.status === "halted" ? 0 : t.speedKmh} km/h</p>
-              <p>Delay: {Math.round(t.delayMinutes)} min</p>
-              {t.capacity > 0 && (
-                <p>
-                  Passengers: {t.passengers}/{t.capacity}
+      {trains.map((t) => {
+        const from = stationMap.get(t.route[0])?.name ?? t.route[0];
+        const to = stationMap.get(t.route[t.route.length - 1])?.name ?? "";
+        return (
+          <Marker key={t.id} position={[t.lat, t.lng]} icon={trainIcon(t)}>
+            <Popup>
+              <div className="space-y-1 font-mono">
+                <p className="text-sm font-semibold">
+                  {t.id} · {t.name}
                 </p>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+                <p className="text-[10px] uppercase tracking-wide" style={{ color: TRAIN_COLOR[t.status] }}>
+                  {t.status.replace("_", " ")}
+                  {t.delayMinutes > 0 ? ` +${Math.round(t.delayMinutes)} min` : ""}
+                </p>
+                <p>From: {from}</p>
+                <p>To: {to}</p>
+                <p>Speed: {t.status === "halted" ? 0 : t.speedKmh} km/h</p>
+                {t.capacity > 0 && (
+                  <p>
+                    Passengers: {t.passengers}/{t.capacity}
+                  </p>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
 
       {incidents
         .filter((i) => i.status !== "resolved")
