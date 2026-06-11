@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from agents.monitor import announce_incident_detection, monitor_loop
 from agents.orchestrator import handle_incident as orchestrate_incident
 from simulation.engine import (
     advance_trains,
@@ -32,6 +33,12 @@ load_dotenv()
 state = NetworkState()
 
 
+async def dispatch_incident(incident):
+    """Monitor detects first, then orchestrator coordinates resolution."""
+    await announce_incident_detection(incident, state)
+    await orchestrate_incident(incident, state)
+
+
 # ──────────────────────────────────────────────
 #  Simulation loop (runs in background)
 # ──────────────────────────────────────────────
@@ -48,9 +55,11 @@ async def simulation_loop():
         if incident:
             state.add_incident(incident)
             await ws_manager.broadcast_incident_new(incident.to_dict())
+            asyncio.create_task(dispatch_incident(incident))
 
-            # Dispatch the orchestrator to coordinate agent resolution
-            asyncio.create_task(orchestrate_incident(incident, state))
+        for segment_id, health in state.pending_network_alerts:
+            await ws_manager.broadcast_network_alert(segment_id, health)
+        state.pending_network_alerts.clear()
 
         # Broadcast updated train positions
         await ws_manager.broadcast_train_update(state.get_all_trains())
@@ -68,11 +77,13 @@ async def lifespan(app: FastAPI):
     initialize_trains(state)
     state.is_running = True
     simulation_task = asyncio.create_task(simulation_loop())
+    monitor_task = asyncio.create_task(monitor_loop(state))
     print(f"Simulation started with {len(state.trains)} trains")
     yield
     # Shutdown
     state.is_running = False
     simulation_task.cancel()
+    monitor_task.cancel()
     print("🛑 Simulation stopped.")
 
 
@@ -137,9 +148,7 @@ async def trigger_incident():
     incident = trigger_demo_incident(state)
     state.add_incident(incident)
     await ws_manager.broadcast_incident_new(incident.to_dict())
-
-    # Dispatch the orchestrator to coordinate agent resolution
-    asyncio.create_task(orchestrate_incident(incident, state))
+    asyncio.create_task(dispatch_incident(incident))
 
     return {
         "message": "Demo incident triggered",
@@ -199,6 +208,6 @@ async def root():
 
 
 # ──────────────────────────────────────────────
-#  Run with: uvicorn main:sio_asgi_app --reload --port 8000
+#  Run with: python -m uvicorn main:sio_asgi_app --reload --port 8000
 #  NOTE: We export sio_asgi_app (not app) so Socket.IO works
 # ──────────────────────────────────────────────

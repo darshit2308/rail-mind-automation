@@ -313,6 +313,7 @@ def flag_segment_for_speed_restriction(state: NetworkState, segment_id: str, max
         return f"Segment {segment_id} not found."
     seg.health = "restricted"
     seg.max_speed_kmh = max_speed
+    state.queue_network_alert(segment_id, seg.health)
     return f"Segment {segment_id} flagged: speed restriction {max_speed}km/h until maintenance complete."
 
 
@@ -347,6 +348,7 @@ def log_resolution(state: NetworkState, incident_id: str, resolution_summary: st
         seg = state.get_segment(inc.location["segment_id"])
         if seg and seg.health != "clear":
             seg.health = "clear"
+            state.queue_network_alert(seg.id, seg.health)
 
     # Release halted trains
     for tid in inc.affected_trains:

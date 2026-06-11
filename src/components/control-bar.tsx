@@ -1,10 +1,12 @@
-import { BarChart3, Map as MapIcon, TrainFront, Waypoints, Zap } from "lucide-react";
+import { BarChart3, Map as MapIcon, TrainFront, Waypoints, Wifi, WifiOff, Zap } from "lucide-react";
+import type { ConnectionStatus } from "@/lib/sim/types";
 
 export type ViewId = "map" | "network" | "analytics";
 
 interface ControlBarProps {
   clock: string;
   health: number;
+  connectionStatus: ConnectionStatus;
   speed: number;
   onSpeed: (s: number) => void;
   onDemo: () => void;
@@ -21,9 +23,16 @@ const VIEWS: { id: ViewId; label: string; icon: typeof MapIcon }[] = [
   { id: "analytics", label: "Analytics", icon: BarChart3 },
 ];
 
+const CONNECTION_LABEL: Record<ConnectionStatus, string> = {
+  connected: "Backend connected",
+  connecting: "Connecting…",
+  disconnected: "Reconnecting…",
+};
+
 export function ControlBar({
   clock,
   health,
+  connectionStatus,
   speed,
   onSpeed,
   onDemo,
@@ -78,6 +87,24 @@ export function ControlBar({
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current" />
           NETWORK HEALTH {health}%
+        </span>
+
+        <span
+          className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-bold tracking-wide sm:flex ${
+            connectionStatus === "connected"
+              ? "bg-success/15 text-success"
+              : connectionStatus === "connecting"
+                ? "bg-warning/15 text-warning"
+                : "bg-destructive/15 text-destructive"
+          }`}
+          title={CONNECTION_LABEL[connectionStatus]}
+        >
+          {connectionStatus === "connected" ? (
+            <Wifi className="h-3 w-3" />
+          ) : (
+            <WifiOff className="h-3 w-3" />
+          )}
+          {CONNECTION_LABEL[connectionStatus]}
         </span>
 
         <span className="flex items-center gap-1.5 rounded-full bg-destructive/15 px-2.5 py-1 font-mono text-[10px] font-bold tracking-wide text-destructive">

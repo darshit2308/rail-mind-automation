@@ -80,11 +80,22 @@ export interface Incident {
 
 export type FeedKind = "detected" | "dispatch" | "thinking" | "step" | "resolved";
 
+export interface ResolutionLogEntry {
+  timestamp: string;
+  agent: string;
+  action: string;
+}
+
 export interface ResolvedInfo {
   title: string;
   seconds: number;
   passengers: number;
+  incidentId: string;
+  summary: string;
+  timeline: ResolutionLogEntry[];
 }
+
+export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
 export interface FeedEntry {
   id: number;

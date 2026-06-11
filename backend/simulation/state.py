@@ -125,6 +125,8 @@ class NetworkState:
         self.simulation_speed: float = 1.0  # 1x, 2x, 5x
         self.is_running: bool = False
         self.tick_count: int = 0
+        self.pending_network_alerts: list[tuple[str, str]] = []
+        self.resolution_times_sec: list[int] = []
 
         # Agent states for the 5+1 agents
         self.agents: dict[str, AgentState] = {
@@ -184,6 +186,16 @@ class NetworkState:
     def get_segment(self, segment_id: str) -> TrackSegment | None:
         return self.segments.get(segment_id)
 
+    def queue_network_alert(self, segment_id: str, health: str):
+        """Queue a segment health change for WebSocket broadcast."""
+        self.pending_network_alerts.append((segment_id, health))
+
+    def record_resolution_time(self, seconds: int):
+        """Track incident resolution duration for analytics."""
+        self.resolution_times_sec.append(seconds)
+        if len(self.resolution_times_sec) > 50:
+            self.resolution_times_sec.pop(0)
+
     def get_track_status(self) -> list[dict]:
         return [
             {
@@ -219,6 +231,12 @@ class NetworkState:
         total_delay = sum(t.delay_minutes for t in self.trains.values())
         avg_delay = total_delay / len(self.trains) if self.trains else 0
 
+        avg_resolution = (
+            round(sum(self.resolution_times_sec) / len(self.resolution_times_sec))
+            if self.resolution_times_sec
+            else None
+        )
+
         return {
             "total_incidents": total_incidents,
             "resolved_incidents": resolved,
@@ -228,6 +246,7 @@ class NetworkState:
             "halted_trains": len([t for t in self.trains.values() if t.status == TrainStatus.HALTED]),
             "average_delay_minutes": round(avg_delay, 1),
             "network_health_score": self._calculate_health_score(),
+            "average_resolution_seconds": avg_resolution,
         }
 
     def _calculate_health_score(self) -> int:

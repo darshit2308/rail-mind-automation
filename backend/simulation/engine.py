@@ -182,6 +182,9 @@ def advance_trains(state: NetworkState, delta_t: float = 2.0):
     Move all running trains forward along their route for delta_t seconds.
     Handles segment transitions and station stops.
     """
+    for seg in state.segments.values():
+        seg.current_trains = []
+
     for train in state.trains.values():
         if train.status == TrainStatus.HALTED:
             train.delay_minutes += 1
@@ -216,6 +219,9 @@ def advance_trains(state: NetworkState, delta_t: float = 2.0):
 
         if not current_seg:
             continue
+
+        if train.id not in current_seg.current_trains:
+            current_seg.current_trains.append(train.id)
 
         # Speed adjustment based on segment health
         effective_speed = train.speed_kmh
@@ -325,9 +331,11 @@ def generate_random_incident(state: NetworkState) -> Incident | None:
             # Apply immediate effects
             if config["severity"] in (IncidentSeverity.HIGH, IncidentSeverity.CRITICAL):
                 segment.health = "restricted"
+                state.queue_network_alert(segment.id, segment.health)
 
             if config["severity"] == IncidentSeverity.CRITICAL:
                 segment.health = "closed"
+                state.queue_network_alert(segment.id, segment.health)
                 # Halt affected trains
                 for tid in affected:
                     train = state.get_train(tid)
@@ -379,5 +387,6 @@ def trigger_demo_incident(state: NetworkState) -> Incident:
     seg = state.segments.get("SEG-THN-KLY-1")
     if seg:
         seg.health = "restricted"
+        state.queue_network_alert(seg.id, seg.health)
 
     return incident

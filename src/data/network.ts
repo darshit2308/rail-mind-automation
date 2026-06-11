@@ -26,20 +26,26 @@ export interface SegmentSeed {
   to: string;
 }
 
+/** 18 track segments — IDs match backend simulation/network.py */
 export const SEGMENT_SEEDS: SegmentSeed[] = [
-  { id: "SEG-01", from: "CSMT", to: "DADAR" },
-  { id: "SEG-02", from: "DADAR", to: "THANE" },
-  { id: "SEG-03", from: "THANE", to: "KALYAN" },
-  { id: "SEG-04", from: "KALYAN", to: "IGATPURI" },
-  { id: "SEG-05", from: "IGATPURI", to: "NASIK" },
-  { id: "SEG-06", from: "KALYAN", to: "LONAVALA" },
-  { id: "SEG-07", from: "LONAVALA", to: "PUNE" },
-  { id: "SEG-08", from: "DADAR", to: "VASAI" },
-  { id: "SEG-09", from: "VASAI", to: "SURAT" },
-  { id: "SEG-10", from: "SURAT", to: "BARODA" },
-  { id: "SEG-11", from: "CSMT", to: "PNVL" },
-  { id: "SEG-12", from: "PNVL", to: "PUNE" },
-  { id: "SEG-13", from: "THANE", to: "VASAI" },
+  { id: "SEG-CSMT-DAD-1", from: "CSMT", to: "DADAR" },
+  { id: "SEG-DAD-THN-1", from: "DADAR", to: "THANE" },
+  { id: "SEG-THN-KLY-1", from: "THANE", to: "KALYAN" },
+  { id: "SEG-KLY-LON-1", from: "KALYAN", to: "LONAVALA" },
+  { id: "SEG-LON-PUN-1", from: "LONAVALA", to: "PUNE" },
+  { id: "SEG-CSMT-PNV-1", from: "CSMT", to: "PNVL" },
+  { id: "SEG-PNV-LON-1", from: "PNVL", to: "LONAVALA" },
+  { id: "SEG-KLY-IGT-1", from: "KALYAN", to: "IGATPURI" },
+  { id: "SEG-IGT-NSK-1", from: "IGATPURI", to: "NASIK" },
+  { id: "SEG-IGT-PUN-1", from: "IGATPURI", to: "PUNE" },
+  { id: "SEG-DAD-VAS-1", from: "DADAR", to: "VASAI" },
+  { id: "SEG-VAS-SUR-1", from: "VASAI", to: "SURAT" },
+  { id: "SEG-SUR-BAR-1", from: "SURAT", to: "BARODA" },
+  { id: "SEG-PNV-PUN-1", from: "PNVL", to: "PUNE" },
+  { id: "SEG-KLY-VAS-1", from: "KALYAN", to: "VASAI" },
+  { id: "SEG-NSK-PUN-1", from: "NASIK", to: "PUNE" },
+  { id: "SEG-THN-PNV-1", from: "THANE", to: "PNVL" },
+  { id: "SEG-NSK-SUR-1", from: "NASIK", to: "SURAT" },
 ];
 
 export interface TrainSeed {

@@ -5,6 +5,7 @@ import { AgentPanel } from "@/components/agent-panel";
 import { AnalyticsPanel } from "@/components/analytics-panel";
 import { ControlBar, type ViewId } from "@/components/control-bar";
 import { IncidentFeed } from "@/components/incident-feed";
+import { ResolutionModal } from "@/components/resolution-modal";
 import { StatsBar } from "@/components/stats-bar";
 import { useSimulation } from "@/hooks/use-simulation";
 import type { SimEngine } from "@/lib/sim/engine";
@@ -113,14 +114,17 @@ function ControlRoom() {
   const engine = useSimulation();
   const [view, setView] = useState<ViewId>("map");
   const [speed, setSpeed] = useState(1);
+  const [resolution, setResolution] = useState(engine.lastResolution);
 
-  // Resolved-incident toast notifications.
+  // Resolved-incident toast + modal.
   useEffect(() => {
-    engine.onResolved = (info) =>
+    engine.onResolved = (info) => {
+      setResolution(info);
       toast.success(`Incident Resolved — ${info.title}`, {
         description: `Resolved by AI in ${info.seconds}s · ${info.passengers.toLocaleString()} passengers notified`,
         duration: 4000,
       });
+    };
     return () => {
       engine.onResolved = null;
     };
@@ -156,9 +160,17 @@ function ControlRoom() {
           },
         }}
       />
+      <ResolutionModal
+        info={resolution}
+        onClose={() => {
+          setResolution(null);
+          engine.clearLastResolution();
+        }}
+      />
       <ControlBar
         clock={engine.timeNow()}
         health={engine.health}
+        connectionStatus={engine.connectionStatus}
         speed={speed}
         onSpeed={(s) => {
           setSpeed(s);

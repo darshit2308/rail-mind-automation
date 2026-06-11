@@ -3,6 +3,7 @@ import { io } from "socket.io-client";
 import type {
   AgentId,
   AgentState,
+  ConnectionStatus,
   FeedEntry,
   FeedKind,
   HistoryPoint,
@@ -10,9 +11,13 @@ import type {
   IncidentType,
   ResolvedInfo,
   Segment,
+  SegmentStatus,
   Severity,
   Train,
+  TrainStatus,
 } from "./types";
+
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 const DEG = Math.PI / 180;
 
@@ -121,16 +126,26 @@ const INCIDENT_DEFS: Record<IncidentType, IncidentDef> = {
   },
 };
 
-const RANDOM_POOL: IncidentType[] = [
-  "signal_failure",
-  "points_failure",
-  "train_breakdown",
-  "platform_overcrowding",
-  "weather_restriction",
-  "medical_emergency",
-  "signal_failure",
-  "platform_overcrowding",
-];
+const INCIDENT_TYPE_ALIASES: Record<string, IncidentType> = {
+  weather_speed_restriction: "weather_restriction",
+};
+
+function mapIncidentType(type: string): IncidentType {
+  return INCIDENT_TYPE_ALIASES[type] ?? (type as IncidentType);
+}
+
+function mapTrainStatus(status: string, delayMinutes: number): TrainStatus {
+  if (status === "halted" || status === "stopped_at_station") return "halted";
+  if (status === "delayed" || delayMinutes > 5) return "delayed";
+  if (status === "rerouted") return "rerouted";
+  return "on_time";
+}
+
+function mapSegmentHealth(health: string): SegmentStatus {
+  if (health === "restricted") return "restricted";
+  if (health === "closed") return "closed";
+  return "clear";
+}
 
 export class SimEngine {
   trains: Train[];
@@ -144,6 +159,8 @@ export class SimEngine {
   resolvedCount = 0;
   resolutionTimes: number[] = [];
   demoRunning = false;
+  connectionStatus: ConnectionStatus = "connecting";
+  lastResolution: ResolvedInfo | null = null;
   /** Set by the UI layer to fire a toast when an incident resolves. */
   onResolved: ((info: ResolvedInfo) => void) | null = null;
 
@@ -199,52 +216,44 @@ export class SimEngine {
     }
 
     this.pushFeed("step", null, "Connecting to RailMind backend...");
+    void this.hydrateFromBackend();
 
-    // Connect to Socket.IO backend
-    this.socket = io("http://localhost:8000");
+    // Connect to Socket.IO backend with auto-reconnect
+    this.socket = io(API_URL, {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 8000,
+    });
 
     this.socket.on("connect", () => {
+      this.connectionStatus = "connected";
       console.log("Connected to backend simulation server");
       this.pushFeed("step", null, "Connected to backend simulation server.");
+      void this.hydrateFromBackend();
     });
 
     this.socket.on("disconnect", () => {
+      this.connectionStatus = "disconnected";
       console.log("Disconnected from backend simulation server");
       this.pushFeed("step", null, "Connection lost. Reconnecting...");
     });
 
+    this.socket.io.on("reconnect_attempt", () => {
+      this.connectionStatus = "connecting";
+    });
+
     this.socket.on("train:update", (data: { trains: any[] }) => {
-      this.trains = data.trains.map((t) => {
-        const prev = this.trains.find((p) => p.id === t.id);
-        return {
-          id: t.id,
-          name: t.name,
-          route: t.route,
-          leg: Math.max(0, t.route_index - 1),
-          progress: t.progress_on_segment,
-          speedKmh: t.speed_kmh,
-          status: t.status === "running" ? "on_time" : t.status,
-          delayMinutes: t.delay_minutes,
-          passengers: prev?.passengers ?? Math.floor(200 + Math.random() * 800),
-          capacity: prev?.capacity ?? 1000,
-          lat: t.position.lat,
-          lng: t.position.lng,
-          heading: prev?.heading ?? 0,
-          reroutedUntil: 0,
-        };
-      });
-      // Set heading correctly based on route index positions
-      for (const t of this.trains) {
-        this.placeTrain(t);
-      }
+      this.applyTrainUpdate(data.trains);
     });
 
     this.socket.on("incident:new", (data: { incident: any }) => {
       const inc = data.incident;
+      const incidentType = mapIncidentType(inc.type);
       const frontendInc: Incident = {
         id: inc.id,
-        type: inc.type,
-        label: INCIDENT_DEFS[inc.type as IncidentType]?.label ?? inc.type,
+        type: incidentType,
+        label: INCIDENT_DEFS[incidentType]?.label ?? inc.type,
         severity: inc.severity,
         locationName: inc.location.name,
         lat: inc.location.lat,
@@ -258,7 +267,7 @@ export class SimEngine {
       if (this.incidents.length > 14) this.incidents.pop();
 
       // Trigger monitor thinking log
-      const def = INCIDENT_DEFS[inc.type as IncidentType];
+      const def = INCIDENT_DEFS[incidentType];
       if (def) {
         this.think("monitor", def.detect(inc.location.name));
       }
@@ -288,27 +297,50 @@ export class SimEngine {
       }
     });
 
-    this.socket.on("network:alert", (data: { segment_id: string; health: any }) => {
+    this.socket.on("network:alert", (data: { segment_id: string; health: string }) => {
       const seg = this.segments.find((s) => s.id === data.segment_id);
       if (seg) {
-        seg.status = data.health;
+        seg.status = mapSegmentHealth(data.health);
       }
     });
 
-    this.socket.on("resolution:complete", (data: { incident_id: string; summary: string }) => {
+    this.socket.on(
+      "resolution:complete",
+      (data: {
+        incident_id: string;
+        summary: string;
+        resolution_seconds?: number;
+        passengers_affected?: number;
+        resolution_log?: { timestamp: string; agent: string; action: string }[];
+      }) => {
       const inc = this.incidents.find((i) => i.id === data.incident_id);
       if (inc) {
         inc.status = "resolved";
         inc.resolvedAtSim = this.wallSim;
+        const seconds = data.resolution_seconds ?? Math.max(1, Math.round(this.wallSim - inc.raisedAtSim));
+        this.resolutionTimes.push(seconds);
       }
       this.resolvedCount += 1;
+      this.demoRunning = false;
       this.pushFeed("resolved", "orchestrator", data.summary);
 
-      this.onResolved?.({
+      const passengers =
+        data.passengers_affected ??
+        (inc?.affectedTrains.reduce((sum, tid) => {
+          const train = this.trains.find((t) => t.id === tid);
+          return sum + (train?.passengers ?? 0);
+        }, 0) || 1200);
+
+      const resolvedInfo: ResolvedInfo = {
         title: inc?.label ?? "Incident Cleared",
-        seconds: 25,
-        passengers: 1200,
-      });
+        seconds: data.resolution_seconds ?? 25,
+        passengers,
+        incidentId: data.incident_id,
+        summary: data.summary,
+        timeline: data.resolution_log ?? [],
+      };
+      this.lastResolution = resolvedInfo;
+      this.onResolved?.(resolvedInfo);
 
       // Set agents back to standby
       setTimeout(() => {
@@ -384,7 +416,7 @@ export class SimEngine {
     if (this.demoRunning) return;
     this.demoRunning = true;
 
-    fetch("http://localhost:8000/api/incidents/trigger", {
+    fetch(`${API_URL}/api/incidents/trigger`, {
       method: "POST",
     })
       .then((res) => {
@@ -393,6 +425,7 @@ export class SimEngine {
       })
       .then((data) => {
         console.log("Demo incident triggered successfully on backend:", data);
+        // demoRunning resets on resolution:complete
       })
       .catch((err) => {
         console.error("Error triggering backend demo:", err);
@@ -402,7 +435,7 @@ export class SimEngine {
 
   setSpeed(s: number) {
     this.speed = s;
-    fetch(`http://localhost:8000/api/simulation/speed?speed=${s}`, {
+    fetch(`${API_URL}/api/simulation/speed?speed=${s}`, {
       method: "POST",
     })
       .then((res) => {
@@ -417,7 +450,74 @@ export class SimEngine {
       });
   }
 
+  clearLastResolution() {
+    this.lastResolution = null;
+  }
+
   // ---------- internals ----------
+
+  private async hydrateFromBackend() {
+    try {
+      const [stateRes, topoRes] = await Promise.all([
+        fetch(`${API_URL}/api/network/state`),
+        fetch(`${API_URL}/api/network/topology`),
+      ]);
+      if (!stateRes.ok || !topoRes.ok) return;
+
+      const stateData = await stateRes.json();
+      const topoData = await topoRes.json();
+
+      if (topoData.segments?.length) {
+        this.segments = topoData.segments.map(
+          (s: { id: string; from_station: string; to_station: string; health: string }) => ({
+            id: s.id,
+            from: s.from_station,
+            to: s.to_station,
+            status: mapSegmentHealth(s.health),
+          }),
+        );
+      }
+
+      if (stateData.tracks?.length) {
+        for (const track of stateData.tracks) {
+          const seg = this.segments.find((s) => s.id === track.id);
+          if (seg) seg.status = mapSegmentHealth(track.health);
+        }
+      }
+
+      if (stateData.trains?.length) {
+        this.applyTrainUpdate(stateData.trains);
+      }
+    } catch (err) {
+      console.warn("Backend hydration skipped:", err);
+    }
+  }
+
+  private applyTrainUpdate(rawTrains: any[]) {
+    this.trains = rawTrains.map((t) => {
+      const prev = this.trains.find((p) => p.id === t.id);
+      const seed = TRAIN_SEEDS.find((s) => s.id === t.id);
+      return {
+        id: t.id,
+        name: t.name,
+        route: t.route,
+        leg: Math.max(0, t.route_index - 1),
+        progress: t.progress_on_segment,
+        speedKmh: t.speed_kmh,
+        status: mapTrainStatus(t.status, t.delay_minutes),
+        delayMinutes: t.delay_minutes,
+        passengers: prev?.passengers ?? seed?.passengers ?? Math.floor(200 + Math.random() * 800),
+        capacity: prev?.capacity ?? seed?.capacity ?? 1000,
+        lat: t.position.lat,
+        lng: t.position.lng,
+        heading: prev?.heading ?? 0,
+        reroutedUntil: 0,
+      };
+    });
+    for (const t of this.trains) {
+      this.placeTrain(t);
+    }
+  }
 
   private placeTrain(t: Train) {
     const a = this.stationMap.get(t.route[t.leg])!;

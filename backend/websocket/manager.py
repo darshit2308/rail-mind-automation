@@ -99,12 +99,23 @@ class WebSocketManager:
             "health": new_health,
         })
 
-    async def broadcast_resolution_complete(self, incident_id: str, summary: str):
+    async def broadcast_resolution_complete(
+        self,
+        incident_id: str,
+        summary: str,
+        *,
+        resolution_seconds: int = 25,
+        passengers_affected: int = 0,
+        resolution_log: list | None = None,
+    ):
         """Broadcast that an incident has been fully resolved."""
         await self.server.emit("resolution:complete", {
             "type": "resolution:complete",
             "incident_id": incident_id,
             "summary": summary,
+            "resolution_seconds": resolution_seconds,
+            "passengers_affected": passengers_affected,
+            "resolution_log": resolution_log or [],
         })
 
 
