@@ -81,8 +81,8 @@ function MapStatsOverlay({ engine }: { engine: SimEngine }) {
   const onTime = engine.trains.filter((t) => t.status === "on_time").length;
   const onTimePct = Math.round((onTime / Math.max(engine.trains.length, 1)) * 100);
   return (
-    <div className="rm-overlay-panel" style={{ position: "absolute", bottom: "12px", left: "12px", zIndex: 1000, padding: "10px 12px", pointerEvents: "none" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "16px" }}>
+    <div className="rm-overlay-panel" style={{ position: "absolute", bottom: "16px", left: "16px", zIndex: 1000, padding: "16px 20px", pointerEvents: "none" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "24px" }}>
         {[
           { label: "Trains", value: String(engine.trains.length), color: "var(--ink-primary)" },
           {
@@ -98,21 +98,21 @@ function MapStatsOverlay({ engine }: { engine: SimEngine }) {
           { label: "Avg delay", value: `${engine.avgDelay.toFixed(1)}m`, color: "var(--warn)" },
         ].map((s) => (
           <div key={s.label}>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: "13px", fontWeight: "bold", color: s.color, fontVariantNumeric: "tabular-nums" }}>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: "18px", fontWeight: "bold", color: s.color, fontVariantNumeric: "tabular-nums" }}>
               {s.value}
             </p>
-            <p style={{ fontSize: "9px", fontWeight: 500, color: "var(--ink-muted)" }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink-muted)", marginTop: "2px" }}>
               {s.label}
             </p>
           </div>
         ))}
       </div>
       <div
-        style={{ marginTop: "8px", paddingTop: "6px", display: "flex", gap: "12px", borderTop: "1px solid var(--border-subtle)" }}
+        style={{ marginTop: "12px", paddingTop: "10px", display: "flex", gap: "16px", borderTop: "1px solid var(--border-subtle)" }}
       >
         {LEGEND.map((l) => (
-          <span key={l.label} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "var(--ink-muted)" }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: l.color }} />
+          <span key={l.label} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: 600, color: "var(--ink-secondary)" }}>
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: l.color }} />
             {l.label}
           </span>
         ))}
@@ -215,22 +215,22 @@ function ControlRoom() {
                   networkView
                 />
               </Suspense>
-              <div className="rm-overlay-panel" style={{ position: "absolute", right: "12px", top: "12px", zIndex: 1000, padding: "10px 12px" }}>
-                <p style={{ fontSize: "10px", fontWeight: 600, marginBottom: "8px", color: "var(--ink-muted)" }}>
+              <div className="rm-overlay-panel" style={{ position: "absolute", right: "16px", top: "16px", zIndex: 1000, padding: "16px 20px" }}>
+                <p style={{ fontSize: "13px", fontWeight: 700, marginBottom: "12px", color: "var(--ink-muted)" }}>
                   Track health
                 </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {TRACK_LEGEND.map((l) => (
-                    <p key={l.label} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "var(--ink-secondary)" }}>
+                    <p key={l.label} style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "13px", fontWeight: 600, color: "var(--ink-secondary)" }}>
                       <span
-                        style={{ height: "3px", width: "20px", borderRadius: "2px", background: l.color }}
+                        style={{ height: "4px", width: "24px", borderRadius: "2px", background: l.color }}
                       />
                       {l.label}
                     </p>
                   ))}
                 </div>
                 <p
-                  style={{ marginTop: "8px", paddingTop: "6px", fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--ink-muted)", borderTop: "1px solid var(--border-subtle)" }}
+                  style={{ marginTop: "12px", paddingTop: "10px", fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--ink-muted)", borderTop: "1px solid var(--border-subtle)" }}
                 >
                   Bubbles = platform occupancy
                 </p>

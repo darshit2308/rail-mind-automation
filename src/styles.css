@@ -20,23 +20,23 @@
    ───────────────────────────────────────────────────────────────────── */
 :root {
   /* ── Base surfaces ── */
-  --bg-base:    #090D18;   /* deepest background — body */
-  --bg-panel:   #0E1420;   /* panel/card surface */
-  --bg-raised:  #141B2D;   /* slightly elevated: headers, sidebar cells */
-  --bg-hover:   #1A2236;   /* hover state */
-  --bg-active:  #1E2A40;   /* active/selected state */
+  --bg-base:    #1E293B;   /* tailwind slate-800 deepest background — body */
+  --bg-panel:   rgba(51, 65, 85, 0.75);   /* tailwind slate-700 with glass effect */
+  --bg-raised:  rgba(71, 85, 105, 0.85);  /* tailwind slate-600 slightly elevated */
+  --bg-hover:   rgba(71, 85, 105, 0.5);   /* hover state */
+  --bg-active:  rgba(100, 116, 139, 0.8);   /* active/selected state */
 
   /* ── Border system (hairlines only) ── */
-  --border-faint:   rgba(255,255,255,0.04);
-  --border-subtle:  rgba(255,255,255,0.08);
-  --border-default: rgba(255,255,255,0.12);
-  --border-strong:  rgba(255,255,255,0.20);
+  --border-faint:   rgba(255,255,255,0.06);
+  --border-subtle:  rgba(255,255,255,0.12);
+  --border-default: rgba(255,255,255,0.18);
+  --border-strong:  rgba(255,255,255,0.30);
 
   /* ── Ink scale (text) ── */
-  --ink-primary:   #F0F4FF;   /* headings, primary data */
-  --ink-secondary: #94A3B8;   /* secondary labels, descriptions */
-  --ink-muted:     #4B5A6E;   /* timestamps, metadata, disabled */
-  --ink-faint:     #2C3A50;   /* divider text, barely-there */
+  --ink-primary:   #FFFFFF;   /* headings, primary data */
+  --ink-secondary: #F8FAFC;   /* secondary labels, descriptions */
+  --ink-muted:     #E2E8F0;   /* timestamps, metadata, disabled */
+  --ink-faint:     #CBD5E1;   /* divider text, barely-there */
 
   /* ── Blue accent — electric, used sparingly ── */
   --accent:        #3B82F6;
@@ -87,14 +87,14 @@
   --sp-16: 32px;
 
   /* ── Radii ── */
-  --r-1: 2px;
-  --r-2: 4px;
-  --r-3: 6px;
-  --r-4: 8px;
+  --r-1: 4px;
+  --r-2: 8px;
+  --r-3: 12px;
+  --r-4: 16px;
 
   /* ── Layout ── */
-  --control-bar-h: 44px;
-  --sidebar-w:     300px;
+  --control-bar-h: 56px;
+  --sidebar-w:     440px;
   --stats-h:       56px;
 
   /* ── Motion ── */
@@ -143,6 +143,7 @@ html, body, #root {
 body {
   font-family: var(--font-ui);
   font-size: var(--text-13);
+  font-weight: 500;
   line-height: 1.5;
   color: var(--ink-primary);
   background: var(--bg-base);
@@ -151,7 +152,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.3;
   color: var(--ink-primary);
   margin: 0;
@@ -249,9 +250,11 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--border-subtle);
-  background: var(--bg-panel);
+  background: transparent;
+  padding: var(--sp-6);
+  gap: var(--sp-6);
   overflow: hidden;
+  z-index: 50;
 }
 
 
@@ -264,6 +267,8 @@ a { color: inherit; text-decoration: none; }
   height: var(--control-bar-h);
   padding: 0 var(--sp-6);
   background: var(--bg-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
   gap: var(--sp-4);
@@ -306,7 +311,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .control-bar__brandname {
-  font-size: var(--text-14);
+  font-size: var(--text-18);
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ink-primary);
@@ -349,14 +354,15 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 0 var(--sp-4);
-  font-size: var(--text-12);
-  font-weight: 500;
+  padding: 0 var(--sp-5);
+  font-size: var(--text-13);
+  font-weight: 600;
   color: var(--ink-muted);
   border-radius: var(--r-2);
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease),
-              background var(--dur-fast) var(--ease);
+              background var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
   white-space: nowrap;
   letter-spacing: 0.01em;
 }
@@ -364,12 +370,13 @@ a { color: inherit; text-decoration: none; }
 .nav-tab:hover {
   color: var(--ink-secondary);
   background: var(--bg-hover);
+  transform: translateY(-1px);
 }
 
 .nav-tab--active {
   color: var(--accent);
   background: var(--accent-dim);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .nav-tab--active:hover {
@@ -495,15 +502,16 @@ a { color: inherit; text-decoration: none; }
 
 .speed-btn {
   font-family: var(--font-mono);
-  font-size: var(--text-11);
-  font-weight: 600;
+  font-size: var(--text-12);
+  font-weight: 700;
   color: var(--ink-muted);
-  padding: 1px var(--sp-2);
+  padding: 2px var(--sp-3);
   border-radius: var(--r-1);
-  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
 
-.speed-btn:hover { background: var(--bg-hover); color: var(--ink-secondary); }
+.speed-btn:hover { background: var(--bg-hover); color: var(--ink-secondary); transform: translateY(-1px); }
+.speed-btn:active { transform: scale(0.96); }
 
 .speed-btn--active {
   background: var(--accent);
@@ -512,26 +520,31 @@ a { color: inherit; text-decoration: none; }
 
 .speed-btn--active:hover { background: var(--accent-hover); color: #fff; }
 
-/* Trigger incident button */
 .trigger-btn {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 5px var(--sp-4);
+  padding: 6px var(--sp-5);
   border-radius: var(--r-2);
   border: 1px solid var(--crit-border);
   background: var(--crit-dim);
   color: var(--crit);
-  font-size: var(--text-11);
-  font-weight: 600;
+  font-size: var(--text-12);
+  font-weight: 700;
   cursor: pointer;
-  transition: background var(--dur-fast) var(--ease);
+  transition: background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
   white-space: nowrap;
   letter-spacing: 0.01em;
 }
 
 .trigger-btn:hover:not(:disabled) {
   background: rgba(239,68,68,0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.trigger-btn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .trigger-btn__icon {
@@ -549,6 +562,11 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .agent-panel__header {
@@ -608,12 +626,15 @@ a { color: inherit; text-decoration: none; }
   gap: var(--sp-4);
   padding: var(--sp-4) var(--sp-5) var(--sp-4) 0;
   border-bottom: 1px solid var(--border-faint);
-  transition: background var(--dur-fast) var(--ease);
+  transition: background var(--dur-base) var(--ease), transform var(--dur-base) var(--ease);
   position: relative;
   align-items: start;
 }
 
-.agent-row:hover { background: var(--bg-hover); }
+.agent-row:hover { 
+  background: var(--bg-hover); 
+  transform: translateX(4px);
+}
 
 .agent-row__accent {
   width: 2px;
@@ -634,8 +655,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 .agent-row__name {
-  font-size: var(--text-12);
-  font-weight: 600;
+  font-size: var(--text-13);
+  font-weight: 700;
   color: var(--ink-primary);
   line-height: 1.2;
   white-space: nowrap;
@@ -644,14 +665,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 .agent-row__activity {
-  font-size: var(--text-11);
+  font-size: var(--text-12);
   color: var(--ink-muted);
   margin-top: 2px;
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 180px;
   font-family: var(--font-mono);
 }
 
@@ -716,7 +736,11 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .incident-feed__header {
@@ -769,6 +793,13 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--border-faint);
   background: var(--bg-panel);
   animation: fadeIn var(--dur-base) var(--ease);
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.incident-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  background: var(--bg-hover);
 }
 
 .incident-chip__dot {
@@ -798,13 +829,14 @@ a { color: inherit; text-decoration: none; }
 .incident-chip--critical .incident-chip__sev { color: var(--crit); }
 
 .incident-chip__label {
-  font-size: var(--text-11);
+  font-size: var(--text-12);
   color: var(--ink-secondary);
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .incident-chip__location {
@@ -936,8 +968,12 @@ a { color: inherit; text-decoration: none; }
   align-items: stretch;
   height: var(--stats-h);
   flex-shrink: 0;
-  border-top: 1px solid var(--border-subtle);
-  background: var(--bg-raised);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
 }
 
 .stats-bar__cell {
@@ -945,7 +981,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 var(--sp-5);
+  padding: 0 var(--sp-3);
   border-right: 1px solid var(--border-faint);
   min-width: 0;
 }
@@ -981,6 +1017,8 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink-muted);
   margin-top: 3px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 
@@ -1003,6 +1041,8 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .analytics-stat {
@@ -1057,9 +1097,10 @@ a { color: inherit; text-decoration: none; }
 .analytics-charts {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1px;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
   flex: 1;
-  background: var(--border-faint);
+  background: transparent;
   min-height: 0;
 }
 
@@ -1069,6 +1110,17 @@ a { color: inherit; text-decoration: none; }
   flex-direction: column;
   padding: var(--sp-6) var(--sp-8);
   min-height: 220px;
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r-3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  transition: transform var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
+}
+
+.chart-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }
 
 .chart-card--wide {
@@ -1310,7 +1362,7 @@ a { color: inherit; text-decoration: none; }
    LEAFLET MAP overrides (dark mode)
    ───────────────────────────────────────────────────────────────────── */
 .leaflet-container {
-  background: #0B1628 !important;
+  background: #1E293B !important;
   font-family: var(--font-ui);
 }
 
@@ -1318,9 +1370,11 @@ a { color: inherit; text-decoration: none; }
   background: var(--bg-panel) !important;
   border: 1px solid var(--border-default) !important;
   border-radius: var(--r-3) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
   color: var(--ink-primary) !important;
   padding: 0 !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
 
 .leaflet-popup-content {
@@ -1365,9 +1419,12 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--border-default) !important;
   border-radius: var(--r-2) !important;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
-  color: var(--ink-secondary) !important;
+  color: var(--ink-primary) !important;
   font-size: 11px;
+  font-weight: 600 !important;
   padding: 4px 8px !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
 }
 
 .leaflet-tooltip::before {

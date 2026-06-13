@@ -166,8 +166,8 @@ export default function RailMap({ trains, segments, incidents, networkView }: Ra
               }}
             >
               <Tooltip direction="top" offset={[0, -10]}>
-                <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--ink-secondary)" }}>
-                  {st.name} — {Math.round(occ * 100)}% occupancy
+                <span style={{ fontSize: 12, fontWeight: 600, fontFamily: "var(--font-mono)", color: "var(--ink-primary)" }}>
+                  {st.name} — <span style={{ color: "var(--ink-secondary)", fontWeight: 500 }}>{Math.round(occ * 100)}% occupancy</span>
                 </span>
               </Tooltip>
             </CircleMarker>
@@ -187,7 +187,7 @@ export default function RailMap({ trains, segments, incidents, networkView }: Ra
           }}
         >
           <Tooltip direction="top" offset={[0, -7]}>
-            <span style={{ fontSize: 11, fontFamily: "var(--font-ui)", color: "var(--ink-secondary)" }}>{st.name}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, fontFamily: "var(--font-ui)", color: "var(--ink-primary)" }}>{st.name}</span>
           </Tooltip>
         </CircleMarker>
       ))}
