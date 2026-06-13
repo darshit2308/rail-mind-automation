@@ -1,4 +1,4 @@
-import { BarChart3, Map as MapIcon, TrainFront, Waypoints, Wifi, WifiOff, Zap } from "lucide-react";
+import { BarChart3, Map as MapIcon, Waypoints, Zap } from "lucide-react";
 import type { ConnectionStatus } from "@/lib/sim/types";
 
 export type ViewId = "map" | "network" | "analytics";
@@ -19,14 +19,14 @@ const SPEEDS = [1, 2, 5];
 
 const VIEWS: { id: ViewId; label: string; icon: typeof MapIcon }[] = [
   { id: "map", label: "Live Map", icon: MapIcon },
-  { id: "network", label: "Network View", icon: Waypoints },
+  { id: "network", label: "Network", icon: Waypoints },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
 ];
 
 const CONNECTION_LABEL: Record<ConnectionStatus, string> = {
-  connected: "Backend connected",
+  connected: "Connected",
   connecting: "Connecting…",
-  disconnected: "Reconnecting…",
+  disconnected: "Reconnecting",
 };
 
 export function ControlBar({
@@ -40,106 +40,100 @@ export function ControlBar({
   view,
   onView,
 }: ControlBarProps) {
-  const healthTone =
-    health >= 80
-      ? "bg-success/15 text-success"
-      : health >= 50
-        ? "bg-warning/15 text-warning"
-        : "bg-destructive/15 text-destructive";
-
+  const healthStatus = health >= 80 ? "ok" : health >= 50 ? "warn" : "crit";
+  
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card/60 px-3 backdrop-blur md:px-4">
-      <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/15 text-primary">
-          <TrainFront className="h-5 w-5" />
-        </span>
-        <div className="leading-tight">
-          <h1 className="font-display text-base font-bold tracking-tight">RailMind</h1>
-          <p className="hidden font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground sm:block">
+    <header className="control-bar">
+      {/* Brand */}
+      <div className="control-bar__brand">
+        <div className="control-bar__logomark">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="10" width="12" height="1.8" rx="0.9" fill="white" />
+            <rect x="4.5" y="3.5" width="7" height="5.5" rx="1.2" fill="none" stroke="white" strokeWidth="1.4" />
+            <rect x="4" y="11.8" width="1.8" height="2.2" rx="0.6" fill="rgba(255,255,255,0.5)" />
+            <rect x="10.2" y="11.8" width="1.8" height="2.2" rx="0.6" fill="rgba(255,255,255,0.5)" />
+          </svg>
+        </div>
+        <div>
+          <h1 className="control-bar__brandname">
+            Rail<em>Mind</em>
+          </h1>
+          <p className="control-bar__sub">
             Control Room
           </p>
         </div>
       </div>
 
-      <nav className="mx-auto hidden items-center gap-1 rounded-lg border border-border bg-background/50 p-0.5 md:flex">
-        {VIEWS.map((v) => (
-          <button
-            key={v.id}
-            onClick={() => onView(v.id)}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-colors ${
-              view === v.id
-                ? "border border-border bg-card text-foreground"
-                : "border border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <v.icon className="h-3.5 w-3.5" />
-            {v.label}
-          </button>
-        ))}
+      <div className="control-bar__div" />
+
+      {/* Navigation */}
+      <nav className="control-bar__nav">
+        {VIEWS.map((v) => {
+          const active = view === v.id;
+          return (
+            <button
+              key={v.id}
+              onClick={() => onView(v.id)}
+              className={`nav-tab ${active ? "nav-tab--active" : ""}`}
+            >
+              <v.icon className="nav-tab__icon" />
+              {v.label}
+            </button>
+          );
+        })}
       </nav>
 
-      <div className="ml-auto flex items-center gap-2 md:ml-0 md:gap-3">
-        <span className="hidden font-mono text-xs text-muted-foreground xl:block">{clock}</span>
-
-        <span
-          className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-bold tracking-wide sm:flex ${healthTone}`}
-          title="Network health score"
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-          NETWORK HEALTH {health}%
+      {/* Right cluster */}
+      <div className="control-bar__right">
+        {/* Clock */}
+        <span className="control-bar__clock">
+          {clock}
         </span>
 
-        <span
-          className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-bold tracking-wide sm:flex ${
-            connectionStatus === "connected"
-              ? "bg-success/15 text-success"
-              : connectionStatus === "connecting"
-                ? "bg-warning/15 text-warning"
-                : "bg-destructive/15 text-destructive"
-          }`}
-          title={CONNECTION_LABEL[connectionStatus]}
-        >
-          {connectionStatus === "connected" ? (
-            <Wifi className="h-3 w-3" />
-          ) : (
-            <WifiOff className="h-3 w-3" />
-          )}
-          {CONNECTION_LABEL[connectionStatus]}
-        </span>
+        {/* Health */}
+        <div className="health-pill">
+          <span className={`health-pill__dot health-pill__dot--${healthStatus}`} />
+          <span className="health-pill__val" style={{ color: `var(--${healthStatus})` }}>
+            {health}%
+          </span>
+          <span className="health-pill__lbl">health</span>
+        </div>
 
-        <span className="flex items-center gap-1.5 rounded-full bg-destructive/15 px-2.5 py-1 font-mono text-[10px] font-bold tracking-wide text-destructive">
-          <span className="h-1.5 w-1.5 rounded-full bg-destructive rm-blink" />
-          LIVE
-        </span>
+        {/* Connection */}
+        <div className={`conn-bars conn-bars--${connectionStatus}`}>
+          <div className="conn-bars__track">
+            <div className="conn-bars__bar" />
+            <div className="conn-bars__bar" />
+            <div className="conn-bars__bar" />
+          </div>
+          <span className="conn-bars__lbl">
+            {CONNECTION_LABEL[connectionStatus]}
+          </span>
+        </div>
 
-        <div className="hidden overflow-hidden rounded-md border border-border lg:flex">
+        {/* Speed controls */}
+        <div className="speed-ctrl">
+          <span className="speed-ctrl__label">Speed</span>
           {SPEEDS.map((s) => (
             <button
               key={s}
               onClick={() => onSpeed(s)}
-              className={`px-2.5 py-1 font-mono text-xs transition-colors ${
-                speed === s
-                  ? "bg-primary/20 font-bold text-primary"
-                  : "bg-background/60 text-muted-foreground hover:text-foreground"
-              }`}
-              title={`${s}× simulation speed (press ${s})`}
+              className={`speed-btn ${speed === s ? "speed-btn--active" : ""}`}
             >
               {s}×
             </button>
           ))}
         </div>
 
+        {/* Demo trigger */}
         <button
           onClick={onDemo}
           disabled={demoRunning}
-          className={`flex items-center gap-1.5 rounded-md bg-destructive px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wide text-destructive-foreground transition-opacity hover:opacity-90 disabled:opacity-50 ${
-            demoRunning ? "" : "rm-demo-pulse"
-          }`}
-          title="Press D"
+          className="trigger-btn"
         >
-          <Zap className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">
-            {demoRunning ? "Demo running…" : "Trigger Demo Incident"}
+          <Zap className="trigger-btn__icon" />
+          <span>
+            {demoRunning ? "Demo running…" : "Trigger incident"}
           </span>
         </button>
       </div>

@@ -38,10 +38,26 @@ function Index() {
 
   if (!mounted) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background">
-        <p className="animate-pulse font-mono text-sm text-muted-foreground">
-          Initializing RailMind control room…
-        </p>
+      <main className="app-shell" style={{ alignItems: "center", justifyContent: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", gap: "4px" }}>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "var(--accent)",
+                  animation: `rm-blink 1.2s ease-in-out ${i * 0.2}s infinite`
+                }}
+              />
+            ))}
+          </div>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--ink-muted)" }}>
+            Initializing control room
+          </p>
+        </div>
       </main>
     );
   }
@@ -49,49 +65,54 @@ function Index() {
 }
 
 const LEGEND = [
-  { label: "On time", color: "bg-success" },
-  { label: "Delayed", color: "bg-warning" },
-  { label: "Critical", color: "bg-destructive" },
-  { label: "Rerouting", color: "bg-agent" },
+  { label: "On time", color: "var(--ok)" },
+  { label: "Delayed", color: "var(--warn)" },
+  { label: "Critical", color: "var(--crit)" },
+  { label: "Rerouting", color: "var(--accent)" },
 ] as const;
 
 const TRACK_LEGEND = [
-  { label: "Clear", color: "#10B981" },
-  { label: "Restricted / slow", color: "#F59E0B" },
-  { label: "Blocked", color: "#EF4444" },
+  { label: "Clear", color: "var(--ok)" },
+  { label: "Restricted / slow", color: "var(--warn)" },
+  { label: "Blocked", color: "var(--crit)" },
 ] as const;
 
 function MapStatsOverlay({ engine }: { engine: SimEngine }) {
   const onTime = engine.trains.filter((t) => t.status === "on_time").length;
+  const onTimePct = Math.round((onTime / Math.max(engine.trains.length, 1)) * 100);
   return (
-    <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-lg border border-border bg-card/85 px-3 py-2 backdrop-blur">
-      <div className="grid grid-cols-4 gap-4">
+    <div className="rm-overlay-panel" style={{ position: "absolute", bottom: "12px", left: "12px", zIndex: 1000, padding: "10px 12px", pointerEvents: "none" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "16px" }}>
         {[
-          { label: "Trains", value: String(engine.trains.length) },
+          { label: "Trains", value: String(engine.trains.length), color: "var(--ink-primary)" },
           {
             label: "Incidents",
             value: String(engine.activeIncidents.length),
-            tone: engine.activeIncidents.length > 0 ? "text-destructive" : "text-success",
+            color: engine.activeIncidents.length > 0 ? "var(--crit)" : "var(--ok)",
           },
           {
             label: "On time",
-            value: `${Math.round((onTime / engine.trains.length) * 100)}%`,
-            tone: "text-success",
+            value: `${onTimePct}%`,
+            color: "var(--ok)",
           },
-          { label: "Avg delay", value: `${engine.avgDelay.toFixed(1)}m`, tone: "text-warning" },
+          { label: "Avg delay", value: `${engine.avgDelay.toFixed(1)}m`, color: "var(--warn)" },
         ].map((s) => (
           <div key={s.label}>
-            <p className={`font-mono text-sm font-bold ${s.tone ?? ""}`}>{s.value}</p>
-            <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground">
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: "13px", fontWeight: "bold", color: s.color, fontVariantNumeric: "tabular-nums" }}>
+              {s.value}
+            </p>
+            <p style={{ fontSize: "9px", fontWeight: 500, color: "var(--ink-muted)" }}>
               {s.label}
             </p>
           </div>
         ))}
       </div>
-      <div className="mt-2 flex gap-3 border-t border-border/60 pt-1.5">
+      <div
+        style={{ marginTop: "8px", paddingTop: "6px", display: "flex", gap: "12px", borderTop: "1px solid var(--border-subtle)" }}
+      >
         {LEGEND.map((l) => (
-          <span key={l.label} className="flex items-center gap-1.5 text-[10px]">
-            <span className={`h-2 w-2 rounded-full ${l.color}`} />
+          <span key={l.label} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: "var(--ink-muted)" }}>
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: l.color }} />
             {l.label}
           </span>
         ))}
@@ -102,9 +123,9 @@ function MapStatsOverlay({ engine }: { engine: SimEngine }) {
 
 function MapFallback() {
   return (
-    <div className="flex h-full items-center justify-center">
-      <p className="animate-pulse font-mono text-xs text-muted-foreground">
-        Loading network map…
+    <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }}>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--ink-muted)", animation: "rm-blink 1.4s ease-in-out infinite" }}>
+        Loading network map
       </p>
     </div>
   );
@@ -116,7 +137,6 @@ function ControlRoom() {
   const [speed, setSpeed] = useState(1);
   const [resolution, setResolution] = useState(engine.lastResolution);
 
-  // Resolved-incident toast + modal.
   useEffect(() => {
     engine.onResolved = (info) => {
       setResolution(info);
@@ -130,7 +150,6 @@ function ControlRoom() {
     };
   }, [engine]);
 
-  // Keyboard shortcuts: D = demo, 1/2/5 = speed.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -147,16 +166,16 @@ function ControlRoom() {
   }, [engine]);
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+    <main className="app-shell">
       <Toaster
         theme="dark"
         position="top-center"
         toastOptions={{
           style: {
-            background: "rgba(16,185,129,0.12)",
-            border: "1px solid #10B981",
-            color: "var(--color-foreground)",
-            backdropFilter: "blur(8px)",
+            background: "var(--bg-panel)",
+            border: "1px solid var(--ok-border)",
+            color: "var(--ok)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
           },
         }}
       />
@@ -182,53 +201,58 @@ function ControlRoom() {
         onView={setView}
       />
 
-      {view === "analytics" ? (
-        <AnalyticsPanel engine={engine} />
-      ) : view === "network" ? (
-        <div className="relative min-h-0 flex-1">
-          <Suspense fallback={<MapFallback />}>
-            <RailMap
-              trains={engine.trains}
-              segments={engine.segments}
-              incidents={engine.incidents}
-              networkView
-            />
-          </Suspense>
-          <div className="absolute right-3 top-3 z-[1000] rounded-lg border border-border bg-card/85 px-3 py-2.5 backdrop-blur">
-            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
-              Track health
-            </p>
-            <div className="mt-1.5 space-y-1">
-              {TRACK_LEGEND.map((l) => (
-                <p key={l.label} className="flex items-center gap-2 text-[11px]">
-                  <span
-                    className="h-1 w-5 rounded-full"
-                    style={{ background: l.color }}
-                  />
-                  {l.label}
+      <div className="app-body">
+        <div className="main-content relative">
+          {view === "analytics" ? (
+            <AnalyticsPanel engine={engine} />
+          ) : view === "network" ? (
+            <>
+              <Suspense fallback={<MapFallback />}>
+                <RailMap
+                  trains={engine.trains}
+                  segments={engine.segments}
+                  incidents={engine.incidents}
+                  networkView
+                />
+              </Suspense>
+              <div className="rm-overlay-panel" style={{ position: "absolute", right: "12px", top: "12px", zIndex: 1000, padding: "10px 12px" }}>
+                <p style={{ fontSize: "10px", fontWeight: 600, marginBottom: "8px", color: "var(--ink-muted)" }}>
+                  Track health
                 </p>
-              ))}
-            </div>
-            <p className="mt-2 border-t border-border/60 pt-1.5 font-mono text-[9px] text-muted-foreground">
-              Bubbles = platform occupancy
-            </p>
-          </div>
-          <MapStatsOverlay engine={engine} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {TRACK_LEGEND.map((l) => (
+                    <p key={l.label} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "var(--ink-secondary)" }}>
+                      <span
+                        style={{ height: "3px", width: "20px", borderRadius: "2px", background: l.color }}
+                      />
+                      {l.label}
+                    </p>
+                  ))}
+                </div>
+                <p
+                  style={{ marginTop: "8px", paddingTop: "6px", fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--ink-muted)", borderTop: "1px solid var(--border-subtle)" }}
+                >
+                  Bubbles = platform occupancy
+                </p>
+              </div>
+              <MapStatsOverlay engine={engine} />
+            </>
+          ) : (
+            <>
+              <Suspense fallback={<MapFallback />}>
+                <RailMap
+                  trains={engine.trains}
+                  segments={engine.segments}
+                  incidents={engine.incidents}
+                />
+              </Suspense>
+              <MapStatsOverlay engine={engine} />
+            </>
+          )}
         </div>
-      ) : (
-        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <div className="relative h-[45vh] min-w-0 lg:h-auto lg:flex-1">
-            <Suspense fallback={<MapFallback />}>
-              <RailMap
-                trains={engine.trains}
-                segments={engine.segments}
-                incidents={engine.incidents}
-              />
-            </Suspense>
-            <MapStatsOverlay engine={engine} />
-          </div>
 
-          <aside className="flex min-h-0 flex-1 flex-col border-t border-border lg:w-[420px] lg:flex-none lg:border-l lg:border-t-0">
+        {view === "map" && (
+          <aside className="sidebar">
             <AgentPanel agents={engine.agents} />
             <IncidentFeed feed={engine.feed} incidents={engine.incidents} />
             <StatsBar
@@ -238,8 +262,8 @@ function ControlRoom() {
               health={engine.health}
             />
           </aside>
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
 }

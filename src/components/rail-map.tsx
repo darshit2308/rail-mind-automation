@@ -13,50 +13,86 @@ import { STATIONS } from "@/data/network";
 import type { Incident, Segment, Severity, Train } from "@/lib/sim/types";
 
 const SEG_COLOR: Record<Segment["status"], string> = {
-  clear: "#1E40AF",
+  clear:      "#3B82F6",
   restricted: "#F59E0B",
-  closed: "#EF4444",
+  closed:     "#F43F5E",
 };
 
 const SEG_COLOR_NETWORK: Record<Segment["status"], string> = {
-  clear: "#10B981",
-  restricted: "#F59E0B",
-  closed: "#EF4444",
+  clear:      "#16A34A",
+  restricted: "#D97706",
+  closed:     "#DC2626",
 };
 
 const TRAIN_COLOR: Record<Train["status"], string> = {
-  on_time: "#10B981",
-  delayed: "#F59E0B",
-  halted: "#EF4444",
-  rerouted: "#8B5CF6",
+  on_time:  "#16A34A",
+  delayed:  "#D97706",
+  halted:   "#DC2626",
+  rerouted: "#7E22CE",
+};
+
+const TRAIN_BG: Record<Train["status"], string> = {
+  on_time:  "rgba(34, 197, 94, 0.15)",
+  delayed:  "rgba(217, 119, 6, 0.15)",
+  halted:   "rgba(220, 38, 38, 0.15)",
+  rerouted: "rgba(126, 34, 206, 0.15)",
 };
 
 const SEV_COLOR: Record<Severity, string> = {
-  medium: "#F59E0B",
-  high: "#F97316",
-  critical: "#EF4444",
+  medium:   "#D97706",
+  high:     "#EA580C",
+  critical: "#DC2626",
 };
 
 const MAJOR_STATIONS = ["CSMT", "DADAR", "THANE", "KALYAN", "PUNE", "SURAT"];
-
 const stationMap = new Map(STATIONS.map((s) => [s.id, s] as const));
 
 function trainIcon(t: Train) {
   const c = TRAIN_COLOR[t.status];
-  const pulse = t.status === "halted" ? "rm-blink" : "";
+  const bg = TRAIN_BG[t.status];
+  const blink = t.status === "halted"
+    ? `animation: pulse 1.4s ease-in-out infinite;`
+    : "";
   return L.divIcon({
-    className: "rm-icon",
-    html: `<div class="rm-train"><span class="rm-dot ${pulse}" style="background:${c};box-shadow:0 0 10px ${c}"></span><span class="rm-tid">${t.id}</span></div>`,
-    iconSize: [48, 28],
-    iconAnchor: [24, 7],
+    className: "",
+    html: `
+      <div style="
+        display:flex;align-items:center;gap:4px;
+        background:${bg};
+        border:1.5px solid ${c};
+        border-radius:20px;
+        padding:3px 7px 3px 5px;
+        box-shadow:0 1px 4px rgba(0,0,0,0.50);
+        backdrop-filter:blur(4px);
+        ${blink}
+      ">
+        <span style="width:7px;height:7px;border-radius:50%;background:${c};display:block;"></span>
+        <span style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:700;color:${c};letter-spacing:0.04em;">
+          ${t.id}
+        </span>
+      </div>`,
+    iconSize: [52, 22],
+    iconAnchor: [26, 11],
   });
 }
 
 function incidentIcon(i: Incident) {
   const c = SEV_COLOR[i.severity];
   return L.divIcon({
-    className: "rm-icon",
-    html: `<div class="rm-inc" style="--ic:${c}"><span class="rm-inc-ring"></span><span class="rm-inc-core"></span></div>`,
+    className: "",
+    html: `
+      <div style="position:relative;width:22px;height:22px;display:flex;align-items:center;justify-content:center;">
+        <div style="
+          position:absolute;width:22px;height:22px;border-radius:50%;
+          background:${c}20;border:1.5px solid ${c}60;
+          animation:pulse 1.6s ease-in-out infinite;
+        "></div>
+        <div style="
+          width:11px;height:11px;border-radius:50%;
+          background:${c};
+          box-shadow:0 0 0 3px ${c}30;
+        "></div>
+      </div>`,
     iconSize: [22, 22],
     iconAnchor: [11, 11],
   });
@@ -99,15 +135,14 @@ export default function RailMap({ trains, segments, incidents, networkView }: Ra
         return (
           <Polyline
             key={s.id}
-            positions={[
-              [a.lat, a.lng],
-              [b.lat, b.lng],
-            ]}
+            positions={[[a.lat, a.lng], [b.lat, b.lng]]}
             pathOptions={{
               color: segColors[s.status],
-              weight: s.status === "clear" ? 3 : 5,
-              opacity: networkView ? 0.95 : 0.8,
-              dashArray: s.status === "restricted" ? "6 6" : undefined,
+              weight: s.status === "clear" ? 3 : 4.5,
+              opacity: 0.85,
+              dashArray: s.status === "restricted" ? "8 6" : undefined,
+              lineCap: "round",
+              lineJoin: "round",
             }}
           />
         );
@@ -117,16 +152,23 @@ export default function RailMap({ trains, segments, incidents, networkView }: Ra
         MAJOR_STATIONS.map((id) => {
           const st = stationMap.get(id)!;
           const occ = occupancyFor(id, trains);
-          const color = occ > 0.85 ? "#EF4444" : occ > 0.65 ? "#F59E0B" : "#10B981";
+          const occColor = occ > 0.85 ? "#DC2626" : occ > 0.65 ? "#D97706" : "#16A34A";
           return (
             <CircleMarker
               key={`occ-${id}`}
               center={[st.lat, st.lng]}
-              radius={10 + occ * 16}
-              pathOptions={{ color, weight: 1, fillColor: color, fillOpacity: 0.18 }}
+              radius={10 + occ * 14}
+              pathOptions={{
+                color: occColor,
+                weight: 1.5,
+                fillColor: occColor,
+                fillOpacity: 0.15,
+              }}
             >
-              <Tooltip direction="top" offset={[0, -10]} className="rm-station-label">
-                {st.name} — platform occupancy {Math.round(occ * 100)}%
+              <Tooltip direction="top" offset={[0, -10]}>
+                <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--ink-secondary)" }}>
+                  {st.name} — {Math.round(occ * 100)}% occupancy
+                </span>
               </Tooltip>
             </CircleMarker>
           );
@@ -136,11 +178,16 @@ export default function RailMap({ trains, segments, incidents, networkView }: Ra
         <CircleMarker
           key={st.id}
           center={[st.lat, st.lng]}
-          radius={6}
-          pathOptions={{ color: "#1E3A8A", weight: 2, fillColor: "#3B82F6", fillOpacity: 1 }}
+          radius={5}
+          pathOptions={{
+            color: "var(--bg-panel)",
+            weight: 1.5,
+            fillColor: "var(--ink-muted)",
+            fillOpacity: 1,
+          }}
         >
-          <Tooltip direction="top" offset={[0, -7]} className="rm-station-label">
-            {st.name}
+          <Tooltip direction="top" offset={[0, -7]}>
+            <span style={{ fontSize: 11, fontFamily: "var(--font-ui)", color: "var(--ink-secondary)" }}>{st.name}</span>
           </Tooltip>
         </CircleMarker>
       ))}
@@ -148,22 +195,25 @@ export default function RailMap({ trains, segments, incidents, networkView }: Ra
       {trains.map((t) => {
         const from = stationMap.get(t.route[0])?.name ?? t.route[0];
         const to = stationMap.get(t.route[t.route.length - 1])?.name ?? "";
+        const statusColor = TRAIN_COLOR[t.status];
         return (
           <Marker key={t.id} position={[t.lat, t.lng]} icon={trainIcon(t)}>
             <Popup>
-              <div className="space-y-1 font-mono">
-                <p className="text-sm font-semibold">
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: 12, minWidth: 160, color: "var(--ink-primary)" }}>
+                <p style={{ fontWeight: 700, margin: "0 0 8px" }}>
                   {t.id} · {t.name}
                 </p>
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: TRAIN_COLOR[t.status] }}>
+                <p style={{ color: statusColor, fontWeight: 600, margin: "0 0 4px", textTransform: "capitalize" }}>
                   {t.status.replace("_", " ")}
                   {t.delayMinutes > 0 ? ` +${Math.round(t.delayMinutes)} min` : ""}
                 </p>
-                <p>From: {from}</p>
-                <p>To: {to}</p>
-                <p>Speed: {t.status === "halted" ? 0 : t.speedKmh} km/h</p>
+                <p style={{ color: "var(--ink-secondary)", margin: "2px 0" }}>From: {from}</p>
+                <p style={{ color: "var(--ink-secondary)", margin: "2px 0" }}>To: {to}</p>
+                <p style={{ color: "var(--ink-secondary)", margin: "2px 0" }}>
+                  Speed: {t.status === "halted" ? 0 : t.speedKmh} km/h
+                </p>
                 {t.capacity > 0 && (
-                  <p>
+                  <p style={{ color: "var(--ink-secondary)", margin: "2px 0" }}>
                     Passengers: {t.passengers}/{t.capacity}
                   </p>
                 )}
@@ -178,14 +228,23 @@ export default function RailMap({ trains, segments, incidents, networkView }: Ra
         .map((i) => (
           <Marker key={i.id} position={[i.lat, i.lng]} icon={incidentIcon(i)} zIndexOffset={1000}>
             <Popup>
-              <div className="space-y-1 font-mono">
-                <p className="text-sm font-semibold">
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: 12, minWidth: 160, color: "var(--ink-primary)" }}>
+                <p style={{ fontWeight: 700, margin: "0 0 8px" }}>
                   {i.id} · {i.label}
                 </p>
-                <p>Location: {i.locationName}</p>
-                <p>Severity: {i.severity.toUpperCase()}</p>
-                <p>Affected: {i.affectedTrains.join(", ") || "—"}</p>
-                <p>Status: {i.status.replace("_", " ")}</p>
+                <p style={{ color: "var(--ink-secondary)", margin: "2px 0" }}>Location: {i.locationName}</p>
+                <p style={{ margin: "2px 0" }}>
+                  Severity:{" "}
+                  <span style={{ color: SEV_COLOR[i.severity], fontWeight: 600, textTransform: "capitalize" }}>
+                    {i.severity}
+                  </span>
+                </p>
+                <p style={{ color: "var(--ink-secondary)", margin: "2px 0" }}>
+                  Affected: {i.affectedTrains.join(", ") || "—"}
+                </p>
+                <p style={{ color: "var(--ink-secondary)", margin: "2px 0", textTransform: "capitalize" }}>
+                  Status: {i.status.replace("_", " ")}
+                </p>
               </div>
             </Popup>
           </Marker>
