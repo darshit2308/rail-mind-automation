@@ -123,25 +123,6 @@ Watch the live log stream in the **Incident Feed** as the agents collaborate:
 
 ---
 
-## ☁️ Production Deployment
-
-### 1. Backend on Render 🐍
-The backend includes a `render.yaml` blueprint configuration for easy monorepo deployment:
-1. Connect your repository to **Render**.
-2. Create a new **Blueprint** service. Render will automatically parse the `render.yaml` configuration.
-3. It will set the root directory to `backend`, run `pip install -r requirements.txt`, and boot the app using `uvicorn main:sio_asgi_app --host 0.0.0.0 --port $PORT`.
-4. Make sure to input your environment variables (like `ANTHROPIC_API_KEY`) and set `CORS_ALLOWED_ORIGINS` to your Vercel URL.
-
-### 2. Frontend on Vercel ⚡
-1. Create a new project on **Vercel** and connect your repository.
-2. Select the repository root as the root folder. Vercel automatically detects the Vite/TanStack Start framework.
-3. In **Environment Variables**, add:
-   - **Key**: `VITE_API_URL`
-   - **Value**: `https://your-backend-render-url.onrender.com` (your deployed Render URL, **without** a trailing slash)
-4. Click **Deploy**.
-
----
-
 ## 🤖 The AI Agents & Roles
 
 | Agent | Responsibility |
