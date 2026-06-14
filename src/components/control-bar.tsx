@@ -1,7 +1,7 @@
-import { BarChart3, Map as MapIcon, Waypoints, Zap } from "lucide-react";
+import { BarChart3, Map as MapIcon, Waypoints, Zap, HelpCircle, BookOpen } from "lucide-react";
 import type { ConnectionStatus } from "@/lib/sim/types";
 
-export type ViewId = "map" | "network" | "analytics";
+export type ViewId = "map" | "network" | "analytics" | "guide";
 
 interface ControlBarProps {
   clock: string;
@@ -13,6 +13,7 @@ interface ControlBarProps {
   demoRunning: boolean;
   view: ViewId;
   onView: (v: ViewId) => void;
+  onHelp?: () => void;
 }
 
 const SPEEDS = [1, 2, 5];
@@ -21,6 +22,7 @@ const VIEWS: { id: ViewId; label: string; icon: typeof MapIcon }[] = [
   { id: "map", label: "Live Map", icon: MapIcon },
   { id: "network", label: "Network", icon: Waypoints },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "guide", label: "Quick Guide", icon: BookOpen },
 ];
 
 const CONNECTION_LABEL: Record<ConnectionStatus, string> = {
@@ -39,6 +41,7 @@ export function ControlBar({
   demoRunning,
   view,
   onView,
+  onHelp,
 }: ControlBarProps) {
   const healthStatus = health >= 80 ? "ok" : health >= 50 ? "warn" : "crit";
   
@@ -124,6 +127,36 @@ export function ControlBar({
             </button>
           ))}
         </div>
+
+        {/* Help Onboarding */}
+        {onHelp && (
+          <button
+            onClick={onHelp}
+            className="speed-btn"
+            title="Open Onboarding Guide"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "6px",
+              borderRadius: "var(--r-2)",
+              border: "1px solid var(--border-subtle)",
+              background: "var(--bg-raised)",
+              color: "var(--ink-secondary)",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--bg-hover)";
+              e.currentTarget.style.color = "var(--ink-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--bg-raised)";
+              e.currentTarget.style.color = "var(--ink-secondary)";
+            }}
+          >
+            <HelpCircle size={16} />
+          </button>
+        )}
 
         {/* Demo trigger */}
         <button

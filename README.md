@@ -1,91 +1,161 @@
-# RailMind — Smart Rail Control Room
+# RailMind — Smart Rail Control Room 🚆🤖
 
 **The Brain Behind Every Train**
 
-RailMind is a multi-agent AI control room that autonomously monitors, decides, and resolves railway incidents on a simulated Indian rail network. Five specialized agents — Monitor, Incident Response, Route Optimizer, Passenger Comms, and Maintenance Scheduler — are coordinated by a Master Orchestrator and powered by Claude with tool use.
+RailMind is a multi-agent AI control room that autonomously monitors, decides, and resolves railway incidents on a simulated Indian rail network. Coordinated by a Master Orchestrator, five specialized agents — Monitor, Incident Response, Route Optimizer, Passenger Comms, and Maintenance Scheduler — work in tandem. 
 
-## Architecture
+The application supports a **Live AI Mode** powered by Anthropic's Claude with tool-use/function calling, as well as a robust **Scripted Demo Fallback Mode** if no Anthropic API key is provided.
+
+![RailMind Automation Control Room Dashboard](./dashboard_screenshot.png)
+
+---
+
+## 🏗️ Architecture
 
 ```
-React Control Room UI  ←→  Socket.IO  ←→  FastAPI Backend
-     (Leaflet map)              │              ├── Simulation engine
-     (Agent panel)              │              ├── Monitor agent loop
-     (Incident feed)             │              └── Orchestrator + 5 agents
-     (Analytics)                └── REST API (demo trigger, speed, state)
+┌─────────────────────────────────┐         ┌─────────────────────────────────┐
+│     React 19 Control Room UI    │   WS    │         FastAPI Backend         │
+│  ┌───────────────────────────┐  │ ◄─────► │  ┌───────────────────────────┐  │
+│  │   Leaflet Map (Live)      │  │         │  │   Simulation Engine       │  │
+│  │   Live AI Agents Console  │  │  REST   │  │   Background Monitor Loop │  │
+│  │   Active Incident Feed    │  │ ◄─────► │  │   Orchestrator + Agents   │  │
+│  │   Analytics & Graphs      │  │         │  └───────────────────────────┘  │
+│  └───────────────────────────┘  │         │                                 │
+└─────────────────────────────────┘         └─────────────────────────────────┘
 ```
 
-## Quick Start
+---
 
-### 1. Backend (Python)
+## 🚀 Step-by-Step Local Setup
 
-```bash
-cd backend
-pip install -r requirements.txt
-cp .env.example .env
-# Optional: set ANTHROPIC_API_KEY in .env for live Claude agents
-python -m uvicorn main:sio_asgi_app --reload --port 8000
-```
+### Prerequisites
+Make sure you have the following installed on your machine:
+* **Node.js** (v18+)
+* **Python** (v3.9+)
+* **npm** or **bun** package manager
 
-### 2. Frontend (React + Vite)
+---
 
-```bash
-# from project root
-npm install   # or: bun install
-npm run dev   # or: bun dev
-```
+### Step 1: Run the Backend (Python)
 
-Open **http://localhost:5173** (or the port Vite prints).
+1. Open your terminal and navigate to the `backend` folder:
+   ```bash
+   cd backend
+   ```
+2. Create and activate a virtual environment (optional but recommended):
+   ```bash
+   # On Windows (PowerShell/CMD)
+   python -m venv venv
+   .\venv\Scripts\activate
 
-### Environment
+   # On Linux/macOS
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+3. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Copy the environment template file:
+   ```bash
+   cp .env.example .env
+   ```
+5. *(Optional)* Open the `.env` file and set your `ANTHROPIC_API_KEY` to enable live LLM reasoning for the agents. If left blank, the app will run in fallback simulation mode.
+6. Start the server using Uvicorn:
+   ```bash
+   python -m uvicorn main:sio_asgi_app --reload --port 8000
+   ```
+   The backend will start and run on **`http://localhost:8000`**.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | — | Claude API key for live agent tool-use loops |
-| `MAX_AGENT_ITERATIONS` | `5` | Guard against stuck agent loops |
-| `VITE_API_URL` | `http://localhost:8000` | Backend URL for the frontend |
+---
 
-## Demo
+### Step 2: Run the Frontend (React + Vite)
 
-1. Start both backend and frontend.
-2. Open the **Live Map** view — trains move in real time.
-3. Click **Trigger Demo Incident** (or press `D`) for the golden-path signal failure at Kalyan Junction.
-4. Watch the Monitor detect the anomaly, then the Orchestrator dispatch all five agents.
-5. Toggle **Analytics** for delay charts and resolution metrics.
-6. Use **1× / 2× / 5×** speed controls (keyboard `1`, `2`, `5`).
+1. Navigate to the project root directory (from `backend`, run `cd ..`).
+2. Install the frontend dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the Vite development server:
+   ```bash
+   npm run dev
+   ```
+4. Open your browser and navigate to the address shown in the terminal (usually **`http://localhost:8080`** or `http://localhost:5173`).
 
-## Agents
+---
 
-| Agent | Role |
-|-------|------|
-| **Master Orchestrator** | Classifies incidents, sequences agent dispatch, logs resolution |
-| **Network Monitor** | Scans telemetry every 8s, detects anomalies, raises alerts |
-| **Incident Response** | Root-cause analysis, halt/release trains, escalation |
-| **Route Optimizer** | Reroutes trains via bypass corridors |
-| **Passenger Comms** | Station announcements, push notifications, departure boards |
-| **Maintenance Scheduler** | Books repair windows, applies speed restrictions |
+## 🎮 How to Use & Walkthrough
 
-## Tech Stack
+Once you have both servers running and the dashboard open in your browser, follow these steps to experience the AI control room:
 
-- **Frontend:** React 19, Vite, TanStack Start, Tailwind CSS, Leaflet, Recharts, Framer Motion, Socket.IO client
-- **Backend:** Python FastAPI, python-socketio, Anthropic SDK, Pydantic, asyncio
-- **AI:** Claude (`claude-sonnet-4-20250514`) with function calling / tool use
+### 0. Take the Guided Tour 🗺️
+* On your first visit, an interactive **guided onboarding tour** will launch automatically to walk you through the key interface controls.
+* You can reopen this guide at any time by clicking the **`?`** icon in the header next to the speed controls.
 
-## API
+### 1. Observe the Live Network
+* Look at the **Live Map**. You will see 8 trains moving in real time between 12 key stations along the Mumbai–Pune–Gujarat corridor.
+* In the bottom-left corner, observe the live metrics: **Total Trains**, **Active Incidents**, **On-Time Rate**, and **Average Delay**.
+* On the right-hand panel, notice the **AI Agents Console** with all 6 agents (Orchestrator + 5 sub-agents) in their `IDLE` or `SCANNING` states.
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/network/state` | GET | Trains, tracks, stations |
-| `/api/network/topology` | GET | Static network graph |
-| `/api/incidents` | GET | Active and recent incidents |
-| `/api/agents/status` | GET | All agent states |
-| `/api/incidents/trigger` | POST | Golden-path demo incident |
-| `/api/simulation/speed` | POST | Set speed (1×, 2×, 5×) |
-| `/api/analytics/summary` | GET | Delay stats and health score |
+### 2. Speed Controls
+* Adjust the simulation speed to see the trains move faster. 
+* Click the **1× / 2× / 5×** speed buttons in the top header or press keys `1`, `2`, or `5` on your keyboard to speed up the ticking engine.
 
-**WebSocket events:** `train:update`, `incident:new`, `incident:update`, `agent:thinking`, `agent:action`, `agent:complete`, `network:alert`, `resolution:complete`
+### 3. Trigger a Demo Incident
+* Click the **🔴 Trigger Incident** button in the header (or press keyboard key `D`).
+* This injects a **train breakdown / signal failure** on the Kalyan Junction corridor.
+* Immediately, you will see:
+  1. The **Network Monitor** agent status change to `ANALYZING` as it parses telemetry.
+  2. A new active incident appear in the **Incident Feed** at the bottom-right.
+  3. The **Master Orchestrator** waking up to coordinate the incident response.
 
-## Network
+### 4. Watch the Multi-Agent Resolution
+Watch the live log stream in the **Incident Feed** as the agents collaborate:
+* **Incident Response**: Halts approaching trains on the segment to avoid collision risks.
+* **Route Optimizer**: Reroutes other trains (e.g. TR-8751) via alternative bypass lines.
+* **Passenger Comms**: Sends passenger announcements and updates station departure boards.
+* **Maintenance Scheduler**: Books emergency repair crews and applies speed caps.
+* **Master Orchestrator**: Completes the incident resolution and restores standard routing.
 
-12 stations across the Mumbai–Pune–Gujarat corridor, 18 track segments, 8 demo trains.
+### 5. Check the Analytics
+* Click the **Analytics** tab in the top navigation bar.
+* Review the graphs displaying the **Network Health Score**, **Average Train Delay**, and **Incident Resolution Times** changing dynamically.
 
-Built for the Agentic AI & Autonomous Systems hackathon track.
+---
+
+## ☁️ Production Deployment
+
+### 1. Backend on Render 🐍
+The backend includes a `render.yaml` blueprint configuration for easy monorepo deployment:
+1. Connect your repository to **Render**.
+2. Create a new **Blueprint** service. Render will automatically parse the `render.yaml` configuration.
+3. It will set the root directory to `backend`, run `pip install -r requirements.txt`, and boot the app using `uvicorn main:sio_asgi_app --host 0.0.0.0 --port $PORT`.
+4. Make sure to input your environment variables (like `ANTHROPIC_API_KEY`) and set `CORS_ALLOWED_ORIGINS` to your Vercel URL.
+
+### 2. Frontend on Vercel ⚡
+1. Create a new project on **Vercel** and connect your repository.
+2. Select the repository root as the root folder. Vercel automatically detects the Vite/TanStack Start framework.
+3. In **Environment Variables**, add:
+   - **Key**: `VITE_API_URL`
+   - **Value**: `https://your-backend-render-url.onrender.com` (your deployed Render URL, **without** a trailing slash)
+4. Click **Deploy**.
+
+---
+
+## 🤖 The AI Agents & Roles
+
+| Agent | Responsibility |
+| :--- | :--- |
+| **Master Orchestrator** | Handles classification, sequences sub-agent dispatches, and logs resolution. |
+| **Network Monitor** | Scans live telemetry across tracks every 8 seconds to detect anomalies. |
+| **Incident Response** | Analyzes root causes, executes emergency halts, and coordinates safety measures. |
+| **Route Optimizer** | Adjusts schedules and routes trains to bypass closed segments. |
+| **Passenger Comms** | Broadcasts delay announcements and updates station display screens. |
+| **Maintenance Scheduler** | Books technicians and schedules track-maintenance windows. |
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend:** React 19, Vite, TanStack Start, Tailwind CSS, Leaflet, Recharts, Socket.IO Client, Framer Motion
+* **Backend:** Python FastAPI, python-socketio, Anthropic SDK (Claude Sonnet 3.5), Pydantic, Uvicorn, asyncio

@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: railmind-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:sio_asgi_app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SIMULATION_SPEED
+        value: 1.0
+      - key: INCIDENT_PROBABILITY
+        value: 0.02
+      - key: MAX_AGENT_ITERATIONS
+        value: 5
+      - key: ANTHROPIC_API_KEY
+        sync: false
+        placeholder: "Enter your Anthropic API Key here"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "*"

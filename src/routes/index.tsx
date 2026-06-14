@@ -6,6 +6,8 @@ import { AnalyticsPanel } from "@/components/analytics-panel";
 import { ControlBar, type ViewId } from "@/components/control-bar";
 import { IncidentFeed } from "@/components/incident-feed";
 import { ResolutionModal } from "@/components/resolution-modal";
+import { WelcomeModal } from "@/components/welcome-modal";
+import { GuidePanel } from "@/components/guide-panel";
 import { StatsBar } from "@/components/stats-bar";
 import { useSimulation } from "@/hooks/use-simulation";
 import type { SimEngine } from "@/lib/sim/engine";
@@ -136,6 +138,14 @@ function ControlRoom() {
   const [view, setView] = useState<ViewId>("map");
   const [speed, setSpeed] = useState(1);
   const [resolution, setResolution] = useState(engine.lastResolution);
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    const shown = localStorage.getItem("railmind_onboarding_shown");
+    if (shown !== "true") {
+      setShowWelcome(true);
+    }
+  }, []);
 
   useEffect(() => {
     engine.onResolved = (info) => {
@@ -186,6 +196,10 @@ function ControlRoom() {
           engine.clearLastResolution();
         }}
       />
+      <WelcomeModal
+        isOpen={showWelcome}
+        onClose={() => setShowWelcome(false)}
+      />
       <ControlBar
         clock={engine.timeNow()}
         health={engine.health}
@@ -199,12 +213,15 @@ function ControlRoom() {
         demoRunning={engine.demoRunning}
         view={view}
         onView={setView}
+        onHelp={() => setShowWelcome(true)}
       />
 
       <div className="app-body">
         <div className="main-content relative">
           {view === "analytics" ? (
             <AnalyticsPanel engine={engine} />
+          ) : view === "guide" ? (
+            <GuidePanel />
           ) : view === "network" ? (
             <>
               <Suspense fallback={<MapFallback />}>

@@ -5,6 +5,7 @@ Mounts Socket.IO, starts the simulation loop, and exposes REST API endpoints.
 
 from __future__ import annotations
 
+import os
 import asyncio
 from contextlib import asynccontextmanager
 
@@ -97,10 +98,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow frontend dev server
+# CORS — allow configured origins or fallback to wildcards
+cors_origins = [
+    org.strip()
+    for org in os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
+    if org.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

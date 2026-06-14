@@ -15,13 +15,20 @@ Events emitted:
 
 from __future__ import annotations
 
+import os
 import socketio
 
 
-# Create an async Socket.IO server
+# Create an async Socket.IO server with dynamic CORS
+cors_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+if cors_origins_env == "*":
+    sio_cors = "*"
+else:
+    sio_cors = [org.strip() for org in cors_origins_env.split(",") if org.strip()]
+
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins="*",  # Allow all origins for dev
+    cors_allowed_origins=sio_cors,
     logger=False,
     engineio_logger=False,
 )
